@@ -1,6 +1,6 @@
 // sw.js - Ultimate Service Worker for Offline PWA
 
-const CACHE_NAME = 'noor-quran-premium-v3';
+const CACHE_NAME = 'noor-quran-premium-v4';
 const STATIC_ASSETS = [
     './',
     './index.html',
