@@ -67,7 +67,7 @@ function setupRoutes() {
                 <div class="badge bg-secondary text-dark rounded-pill px-3 py-2 mb-4 fw-bold shadow-soft slide-up-animation">
                     <i class="fa-solid fa-crown me-1"></i> الإصدار المميز (Premium)
                 </div>
-                <h1 class="display-3 fw-bold text-white mb-3">استمع للقرآن <span class="text-secondary">بقاء وصفاء</span></h1>
+                <h1 class="display-3 fw-bold text-white mb-3">استمع للقرآن <span class="text-secondary">بنقاء وصفاء</span></h1>
                 <p class="lead text-muted-custom mb-5">تجربة استماع فاخرة، بدون إعلانات، ومجانية بالكامل.</p>
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
                     <a href="#/egyptian" class="btn btn-secondary rounded-pill px-4 py-2 fw-bold shadow-soft text-dark"><i class="fa-solid fa-landmark me-2"></i> مكتبة العمالقة</a>
