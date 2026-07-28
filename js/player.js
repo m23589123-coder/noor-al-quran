@@ -69,15 +69,15 @@ class AudioPlayer {
         });
     }
 
-    playTrack(surah, reciter, startTime = 0) {
+playTrack(surah, reciter, startTime = 0) {
         this.currentSurah = surah;
         this.currentReciter = reciter;
         
-        // تحديث الواجهة (النصوص والصور)
-        this.elements.surahNameEl.textContent = surah.nameArabic;
-        this.elements.reciterNameEl.textContent = reciter.nameArabic;
+        // تحديث الواجهة
+        this.elements.surahNameEl.textContent = surah.nameArabic || surah.name || 'غير معروف';
+        this.elements.reciterNameEl.textContent = reciter.nameArabic || reciter.name || 'غير معروف';
 
-        // صورة الغلاف مع نظام الحماية من الأخطاء (Fallback)
+        // معالجة صور الغلاف
         if (reciter.displayPhoto || reciter.photo) {
             this.elements.coverImage.src = reciter.displayPhoto || reciter.photo;
             this.elements.coverImage.classList.remove('d-none');
@@ -88,19 +88,32 @@ class AudioPlayer {
         }
         
         // =========================================
-        // إصلاح مشكلة الصوت (Smart Filename Generator)
+        // الحل الجذري لمشكلة بناء الرابط (Smart URL Builder)
         // =========================================
-        let fileName = surah.fileName;
         
-        // إذا لم يكن هناك اسم ملف مباشر، وكان العنصر يحتوي على رقم سورة (ID)، نقوم بتوليد الرقم بثلاث خانات (001.mp3)
-        if (!fileName && surah.id) {
-            fileName = String(surah.id).padStart(3, '0') + '.mp3';
+        // 1. البحث عن رقم السورة بأي اسم موجود في قاعدة بياناتك
+        let surahNum = surah.id || surah.number || surah.number_of_surah || surah.surah_number;
+        let fileName = surah.fileName || surah.audio;
+        
+        // 2. بناء اسم الملف الصوتي (مثال: 001.mp3)
+        if (!fileName && surahNum) {
+            fileName = String(surahNum).padStart(3, '0') + '.mp3';
         } else if (!fileName) {
             fileName = ''; // في حالة الإذاعة المباشرة
         }
 
-        // دمج رابط سيرفر الشيخ مع اسم الملف
-        const audioUrl = `${reciter.serverUrl}${fileName}`;
+        // 3. ضبط رابط السيرفر لضمان وجود علامة (/) في النهاية
+        let baseUrl = reciter.serverUrl;
+        if (baseUrl && !baseUrl.endsWith('/')) {
+            baseUrl += '/';
+        }
+
+        // 4. دمج الرابط النهائي
+        const audioUrl = fileName ? `${baseUrl}${fileName}` : baseUrl;
+        
+        // سطر للـ Debugging عشان تشوف الرابط بعينك في الـ Console
+        console.log("🛠️ جاري تشغيل الرابط التالي:", audioUrl);
+
         this.audio.src = audioUrl;
         
         if (startTime > 0) {
@@ -115,11 +128,12 @@ class AudioPlayer {
                 StorageManager.addToHistory(surah, reciter);
             })
             .catch(err => {
-                console.error("Error playing audio:", err);
-                StorageManager.showToast('جاري التحميل، يرجى الانتظار...');
+                console.error("❌ خطأ في تشغيل الصوت:", err);
+                StorageManager.showToast('عذراً، التلاوة غير متوفرة لهذا القارئ أو يوجد مشكلة بالإنترنت.');
+                this.isPlaying = false;
+                this.updatePlayIcon();
             });
     }
-
     togglePlay() {
         if (!this.audio.src) return; 
 
