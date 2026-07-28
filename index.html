@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#071A13">
+    <meta name="description" content="نور القرآن - منصة قرآنية متكاملة بتصميم عصري وتجربة استماع استثنائية">
+    <title>نور القرآن | Noor Al-Quran Premium</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Fonts: Cairo & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <!-- Icons: FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS Frameworks & Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <!-- Custom Premium CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/player.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+<body class="premium-scrollbar d-flex flex-column min-vh-100">
+    
+    <!-- Background Effects -->
+    <div class="glass-bg-effect"></div>
+
+    <!-- Navigation (Glassmorphism) -->
+    <nav class="navbar navbar-expand-lg fixed-top glass-nav">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center" href="#/home">
+                <i class="fa-solid fa-quran text-secondary me-2 ms-2 fs-3 float-animation"></i>
+                <span class="fw-bold fs-4 text-white font-cairo">نور القرآن</span>
+            </a>
+            
+            <button class="navbar-toggler shadow-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <i class="fa-solid fa-bars text-white fs-3"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 fw-semibold align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="#/home">الرئيسية</a></li>
+                    <li class="nav-item"><a class="nav-link text-secondary" href="#/egyptian"><i class="fa-solid fa-landmark me-1"></i> العمالقة</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#/quran">المصحف</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#/readers">القراء</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#/tafsir">التفسير</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#/radio">الإذاعة</a></li>
+                    
+                    <!-- Dropdown للمزيد من الأدوات -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="moreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            المزيد
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark bg-glass border-0 shadow-lg" aria-labelledby="moreDropdown">
+                            <li><a class="dropdown-item" href="#/categories"><i class="fa-solid fa-layer-group me-2 text-secondary"></i> الفئات الخاصة</a></li>
+                            <li><a class="dropdown-item" href="#/playlists"><i class="fa-solid fa-list-music me-2 text-secondary"></i> قوائم التشغيل</a></li>
+                            <li><a class="dropdown-item" href="#/azkar"><i class="fa-solid fa-hands-praying me-2 text-secondary"></i> حصن المسلم</a></li>
+                            <li><a class="dropdown-item" href="#/prayer"><i class="fa-solid fa-clock me-2 text-secondary"></i> مواقيت الصلاة</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0">
+                    <button class="btn btn-icon btn-glass text-white" aria-label="Tasbeeh" data-bs-toggle="modal" data-bs-target="#tasbeehModal" title="المسبحة الإلكترونية">
+                        <i class="fa-solid fa-hand-holding-heart"></i>
+                    </button>
+                    <a href="#/history" class="btn btn-icon btn-glass text-white" aria-label="History" title="سجل الاستماع">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </a>
+                    <a href="#/favorites" class="btn btn-icon btn-glass text-danger" aria-label="Favorites" title="المفضلة">
+                        <i class="fa-solid fa-heart"></i>
+                    </a>
+                    <button class="btn btn-icon btn-glass" aria-label="Search" title="البحث الشامل">
+                        <i class="fa-solid fa-search"></i>
+                    </button>
+                    <a href="#/settings" class="btn btn-icon btn-glass text-white" aria-label="Settings" title="الإعدادات">
+                        <i class="fa-solid fa-gear"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main id="app-content" class="container-fluid mt-5 pt-5 flex-grow-1 mb-5 pb-5">
+        <!-- Content Injected via Router -->
+    </main>
+
+    <!-- Premium Footer (By Engineer Moaz Mahmoud) -->
+    <footer class="glass-nav mt-auto pt-5 pb-4">
+        <div class="container">
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4 col-md-6">
+                    <h4 class="fw-bold text-white font-cairo mb-3"><i class="fa-solid fa-quran text-secondary me-2"></i> نور القرآن</h4>
+                    <p class="text-muted-custom lh-lg">منصة قرآنية متكاملة تهدف إلى تقديم تجربة استماع وقراءة استثنائية، خالية من الإعلانات، وتعمل على جميع الأجهزة بكفاءة عالية وبدون إنترنت.</p>
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <h5 class="fw-bold text-white mb-3">روابط سريعة</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#/home" class="text-muted-custom text-decoration-none hover-white">الرئيسية</a></li>
+                        <li class="mb-2"><a href="#/egyptian" class="text-muted-custom text-decoration-none hover-white">مكتبة العمالقة</a></li>
+                        <li class="mb-2"><a href="#/quran" class="text-muted-custom text-decoration-none hover-white">المصحف كاملاً</a></li>
+                        <li class="mb-2"><a href="#/readers" class="text-muted-custom text-decoration-none hover-white">القراء</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold text-white mb-3">الأدوات الإسلامية</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#/azkar" class="text-muted-custom text-decoration-none hover-white">حصن المسلم</a></li>
+                        <li class="mb-2"><a href="#/tafsir" class="text-muted-custom text-decoration-none hover-white">موسوعة التفسير</a></li>
+                        <li class="mb-2"><a href="#/prayer" class="text-muted-custom text-decoration-none hover-white">مواقيت الصلاة</a></li>
+                        <li class="mb-2"><a href="#" data-bs-toggle="modal" data-bs-target="#tasbeehModal" class="text-muted-custom text-decoration-none hover-white">المسبحة الإلكترونية</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="fw-bold text-white mb-3">تواصل مع المطور</h5>
+                    <div class="d-flex gap-3 mb-3">
+                        <a href="https://wa.me/2001276015281" target="_blank" class="btn btn-glass" title="WhatsApp"><i class="fa-brands fa-whatsapp text-success"></i></a>
+                        <a href="#" target="_blank" class="btn btn-glass" title="Facebook"><i class="fa-brands fa-facebook-f text-primary"></i></a>
+                        <a href="#" target="_blank" class="btn btn-glass" title="GitHub"><i class="fa-brands fa-github text-white"></i></a>
+                        <a href="mailto:contact@domain.com" class="btn btn-glass" title="Email"><i class="fa-solid fa-envelope text-danger"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-top border-secondary pt-4 mt-2 text-center" style="border-color: rgba(255,255,255,0.05) !important;">
+                <p class="text-white mb-1 fw-bold font-cairo fs-5">Designed & Developed by Engineer Moaz Mahmoud</p>
+                <p class="text-muted-custom mb-0 small">جميع الحقوق محفوظة &copy; 2026 منصة نور القرآن.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Tasbeeh Modal -->
+    <div class="modal fade" id="tasbeehModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-glass border-0 rounded-4 shadow-lg text-center p-4">
+                <div class="modal-header border-0 justify-content-center position-relative pb-0">
+                    <h4 class="modal-title fw-bold text-white font-cairo">المسبحة الإلكترونية</h4>
+                    <button type="button" class="btn-close btn-close-white position-absolute start-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <h5 class="text-secondary mb-4" id="tasbeeh-text">سُبْحَانَ اللَّهِ</h5>
+                    <div class="d-flex justify-content-center align-items-center mb-4">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-soft" style="width: 150px; height: 150px; border: 4px solid var(--secondary-color); background: rgba(0,0,0,0.2);">
+                            <span class="display-3 fw-bold text-white font-inter" id="tasbeeh-count">0</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary-custom rounded-pill w-100 py-3 fw-bold fs-5 mb-3" id="tasbeeh-click-btn">
+                        <i class="fa-solid fa-fingerprint me-2"></i> اضغط للتسبيح
+                    </button>
+                    <button class="btn btn-outline-custom rounded-pill w-100" id="tasbeeh-reset-btn">
+                        <i class="fa-solid fa-rotate-left me-2"></i> تصفير العداد
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spotify-Inspired Global Player -->
+    <div id="global-player" class="global-player glass-player">
+        <div class="player-container d-flex align-items-center justify-content-between px-3 px-md-4 py-2 flex-wrap gap-3">
+            <!-- Track Info -->
+            <div class="track-info d-flex align-items-center gap-3" style="min-width: 200px;">
+                <div class="cover-art rounded shadow-sm d-flex align-items-center justify-content-center bg-dark position-relative overflow-hidden">
+                    <img src="" alt="Cover" id="player-cover" class="w-100 h-100 object-fit-cover d-none">
+                    <i class="fa-solid fa-music text-secondary" id="player-fallback-icon"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 text-white fw-bold text-truncate" id="current-surah" style="max-width: 150px;">اختر سورة</h6>
+                    <small class="text-muted-custom text-truncate d-block" id="current-reader" style="max-width: 150px;">...</small>
+                </div>
+            </div>
+
+            <!-- Main Controls -->
+            <div class="player-controls d-flex flex-column align-items-center flex-grow-1 px-lg-5">
+                <div class="control-buttons d-flex align-items-center gap-4 mb-2">
+                    <button class="btn text-muted-custom hover-white d-none d-md-block"><i class="fa-solid fa-shuffle"></i></button>
+                    <button class="btn text-white fs-5"><i class="fa-solid fa-backward-step"></i></button>
+                    <button class="btn btn-play-circle shadow-lg"><i class="fa-solid fa-play ms-1"></i></button>
+                    <button class="btn text-white fs-5"><i class="fa-solid fa-forward-step"></i></button>
+                    <button class="btn text-muted-custom hover-white d-none d-md-block"><i class="fa-solid fa-repeat"></i></button>
+                </div>
+                <div class="progress-container w-100 d-flex align-items-center gap-3">
+                    <span class="small text-muted-custom font-inter" id="current-time">00:00</span>
+                    <div class="progress flex-grow-1 player-progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <span class="small text-muted-custom font-inter" id="total-duration">--:--</span>
+                </div>
+            </div>
+
+            <!-- Extra Actions -->
+            <div class="player-actions d-flex align-items-center gap-3 d-none d-lg-flex" style="min-width: 200px; justify-content: flex-end;">
+                <button class="btn text-muted-custom hover-white" title="تحميل"><i class="fa-solid fa-download"></i></button>
+                <div class="volume-control d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-volume-high text-muted-custom small"></i>
+                    <input type="range" class="form-range custom-range" id="volume" min="0" max="100" value="80">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/tasbeeh.js"></script>
+</body>
+</html>

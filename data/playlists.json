@@ -1,0 +1,63 @@
+[
+    {
+        "id": "morning_quran",
+        "title": "إشراقة الصباح",
+        "description": "تلاوات هادئة تبدأ بها يومك في سكينة",
+        "cover": "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=800&q=80",
+        "type": "morning",
+        "items": [
+            {"surahId": 36, "reciterId": "banna"},
+            {"surahId": 55, "reciterId": "basit"},
+            {"surahId": 56, "reciterId": "minshawi"}
+        ]
+    },
+    {
+        "id": "evening_peace",
+        "title": "سكينة المساء",
+        "description": "آيات الطمأنينة قبل النوم",
+        "cover": "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80",
+        "type": "evening",
+        "items": [
+            {"surahId": 67, "reciterId": "muaiqly"},
+            {"surahId": 32, "reciterId": "mishary"},
+            {"surahId": 73, "reciterId": "husary"}
+        ]
+    },
+    {
+        "id": "sadaqah_zain",
+        "title": "صدقة جارية - زين العابدين محمد سالم السكري",
+        "description": "تلاوات خاشعة ومختارة تهدي ثوابها للأرواح الطاهرة، نسأل الله له الرحمة والمغفرة",
+        "cover": "https://images.unsplash.com/photo-1596728472535-64531cd85718?auto=format&fit=crop&w=800&q=80",
+        "type": "funeral",
+        "items": [
+            {"surahId": 89, "reciterId": "minshawi"},
+            {"surahId": 36, "reciterId": "laythi"},
+            {"surahId": 55, "reciterId": "saeed"},
+            {"surahId": 18, "reciterId": "mustafa"}
+        ]
+    },
+    {
+        "id": "friday_vibes",
+        "title": "نفحات الجمعة",
+        "description": "الكهف وسور يوم الجمعة المبارك",
+        "cover": "https://images.unsplash.com/photo-1564683214965-3619addd900d?auto=format&fit=crop&w=800&q=80",
+        "type": "friday",
+        "items": [
+            {"surahId": 18, "reciterId": "shahat"},
+            {"surahId": 62, "reciterId": "banna"},
+            {"surahId": 76, "reciterId": "ajmi"}
+        ]
+    },
+    {
+        "id": "kids_learning",
+        "title": "براعم الإيمان",
+        "description": "قصار السور بصوت نقي ومكرر للأطفال",
+        "cover": "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=800&q=80",
+        "type": "kids",
+        "items": [
+            {"surahId": 114, "reciterId": "husary"},
+            {"surahId": 113, "reciterId": "husary"},
+            {"surahId": 112, "reciterId": "husary"}
+        ]
+    }
+]

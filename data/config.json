@@ -1,0 +1,18 @@
+{
+    "app": {
+        "nameArabic": "نور القرآن",
+        "nameEnglish": "Noor Al-Quran Premium",
+        "version": "3.0.0-Ultimate"
+    },
+    "developer": {
+        "name": "Engineer Moaz Mahmoud",
+        "role": "Senior Software Architect & UI/UX Designer",
+        "copyright": "Designed & Developed by"
+    },
+    "social": {
+        "whatsapp": "https://wa.me/2001276015281",
+        "facebook": "https://facebook.com/",
+        "github": "https://github.com/",
+        "email": "mailto:contact@domain.com"
+    }
+}

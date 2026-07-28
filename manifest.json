@@ -1,0 +1,24 @@
+{
+    "name": "نور القرآن Premium",
+    "short_name": "نور القرآن",
+    "description": "منصة قرآنية متكاملة بتجربة استماع استثنائية وبدون إعلانات.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#071A13",
+    "theme_color": "#071A13",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.flaticon.com/192/3382/3382152.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "https://cdn-icons-png.flaticon.com/512/3382/3382152.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

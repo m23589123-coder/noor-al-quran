@@ -1,0 +1,222 @@
+[
+    {
+        "id": "mishary",
+        "nameArabic": "مشاري راشد العفاسي",
+        "nameEnglish": "Mishary Rashid Alafasy",
+        "country": "الكويت",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server8.mp3quran.net/afs/",
+        "style": "مرتل",
+        "biography": "قارئ ومنشد كويتي، يتميز بعذوبة صوته وإتقانه للقراءات العشر."
+    },
+    {
+        "id": "muaiqly",
+        "nameArabic": "ماهر المعيقلي",
+        "nameEnglish": "Maher Al-Muaiqly",
+        "country": "السعودية",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server12.mp3quran.net/maher/",
+        "style": "مرتل",
+        "biography": "إمام وخطيب المسجد الحرام، يمتاز صوته بالخشوع والهدوء."
+    },
+    {
+        "id": "dosari",
+        "nameArabic": "ياسر الدوسري",
+        "nameEnglish": "Yasser Al-Dosari",
+        "country": "السعودية",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server11.mp3quran.net/yasser/",
+        "style": "مرتل",
+        "biography": "إمام المسجد الحرام، يتميز بنبرة حزينة ومؤثرة جداً."
+    },
+    {
+        "id": "ghamdi",
+        "nameArabic": "سعد الغامدي",
+        "nameEnglish": "Saad Al-Ghamdi",
+        "country": "السعودية",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server7.mp3quran.net/s_gmd/",
+        "style": "مرتل",
+        "biography": "من القراء البارزين في العالم الإسلامي، صوته يتميز بالسلاسة والوضوح."
+    },
+    {
+        "id": "ajmi",
+        "nameArabic": "أحمد بن علي العجمي",
+        "nameEnglish": "Ahmed Al-Ajmi",
+        "country": "السعودية",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server10.mp3quran.net/ajm/",
+        "style": "مرتل",
+        "biography": "يتميز صوته بالسرعة المعتدلة والخشوع."
+    },
+    {
+        "id": "jaber",
+        "nameArabic": "علي جابر",
+        "nameEnglish": "Ali Jaber",
+        "country": "السعودية",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server11.mp3quran.net/a_jbr/",
+        "style": "مرتل",
+        "biography": "إمام المسجد الحرام الأسبق، صاحب الصوت الشجي."
+    },
+    {
+        "id": "jibreel",
+        "nameArabic": "محمد جبريل",
+        "nameEnglish": "Muhammad Jibreel",
+        "country": "مصر",
+        "isEgyptianLibrary": false,
+        "serverUrl": "https://server8.mp3quran.net/jbrl/",
+        "style": "مرتل",
+        "biography": "اشتهر بإمامة المصلين في صلاة التراويح بمسجد عمرو بن العاص."
+    },
+    {
+        "id": "husary",
+        "nameArabic": "محمود خليل الحصري",
+        "nameEnglish": "Mahmoud Khalil Al-Hussary",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server13.mp3quran.net/husr/",
+        "style": "مرتل",
+        "biography": "شيخ عموم المقارئ المصرية الأسبق. أول من سجل المصحف المرتل."
+    },
+    {
+        "id": "basit",
+        "nameArabic": "عبد الباسط عبد الصمد",
+        "nameEnglish": "Abdul Basit Abdus Samad",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server7.mp3quran.net/basit/Mujawwad/",
+        "style": "مجود",
+        "biography": "صاحب الحنجرة الذهبية وصوت مكة."
+    },
+    {
+        "id": "minshawi",
+        "nameArabic": "محمد صديق المنشاوي",
+        "nameEnglish": "Muhammad Siddiq Al-Minshawi",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server11.mp3quran.net/minsh/Mujawwad/",
+        "style": "مجود",
+        "biography": "الصوت الباكي الذي يخشع له القلب."
+    },
+    {
+        "id": "banna",
+        "nameArabic": "محمود علي البنا",
+        "nameEnglish": "Mahmoud Ali Al-Banna",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/banna/",
+        "style": "مرتل",
+        "biography": "صاحب الصوت الملائكي وأحد كبار قراء الإذاعة المصرية."
+    },
+    {
+        "id": "rifaat",
+        "nameArabic": "محمد رفعت",
+        "nameEnglish": "Muhammad Rifaat",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/rifaat/",
+        "style": "مجود - نادرة",
+        "biography": "قيثارة السماء، ورائد التلاوة المجودة.",
+        "availableSurahs": [1, 2, 3, 11, 12, 18, 19, 20, 33, 48, 55, 75, 89, 93, 112, 113, 114]
+    },
+    {
+        "id": "mustafa",
+        "nameArabic": "مصطفى إسماعيل",
+        "nameEnglish": "Mustafa Ismail",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/mustafa/",
+        "style": "مجود - محافل",
+        "biography": "قارئ الملوك والرؤساء، وصاحب المقامات الصوتية المتعددة.",
+        "availableSurahs": [1, 2, 3, 12, 18, 19, 55, 75, 89, 93]
+    },
+    {
+        "id": "laythi",
+        "nameArabic": "محمد الليثي",
+        "nameEnglish": "Muhammad Al-Laythi",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/laythi/",
+        "style": "عزاء - محافل",
+        "biography": "عملاق التلاوة في العصر الحديث، اشتهر بقوة صوته.",
+        "availableSurahs": [18, 36, 55, 75, 89]
+    },
+    {
+        "id": "saeed",
+        "nameArabic": "السعيد عبد الصمد الزناتي",
+        "nameEnglish": "Al-Sayyid Saeed",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/saeed/",
+        "style": "عزاء - محافل",
+        "biography": "من أقطاب التلاوة في مصر والمحافل الكبرى.",
+        "availableSurahs": [12, 18, 19, 55, 75]
+    },
+    {
+        "id": "shahat",
+        "nameArabic": "الشحات محمد أنور",
+        "nameEnglish": "Anwar Al-Shahat",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/shahat/",
+        "style": "مجود - محافل",
+        "biography": "مؤسس مدرسة تلاوة متفردة.",
+        "availableSurahs": [18, 36, 55, 67, 75, 89]
+    },
+    {
+        "id": "sharqawi",
+        "nameArabic": "محمد يحيى الشرقاوي",
+        "nameEnglish": "Muhammad Yahya Al-Sharqawi",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/sharqawi/",
+        "style": "محافل - مجود",
+        "biography": "من كبار قراء الإذاعة والتلفزيون المصري.",
+        "availableSurahs": [12, 18, 55, 75]
+    },
+    {
+        "id": "shuaisha",
+        "nameArabic": "أبو العينين شعيشع",
+        "nameEnglish": "Abu Al-Enein Shuaisha",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/shuaisha/",
+        "style": "مجود - نادرة",
+        "biography": "من الرعيل الأول לקراء الإذاعة المصرية ونقيب القراء الأسبق.",
+        "availableSurahs": [19, 20, 55, 75, 89]
+    },
+    {
+        "id": "bahtimi",
+        "nameArabic": "كامل يوسف البهتيمي",
+        "nameEnglish": "Kamel Yusuf Al-Bahtimi",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/bahtimi/",
+        "style": "مجود - محافل",
+        "biography": "قارئ التواشيح والقرآن، صاحب الحنجرة القوية.",
+        "availableSurahs": [1, 2, 12, 18, 55, 89]
+    },
+    {
+        "id": "fashni",
+        "nameArabic": "طه الفشني",
+        "nameEnglish": "Taha Al-Fashni",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/fashni/",
+        "style": "مجود - ابتهالات",
+        "biography": "ملك التواشيح الدينية وقارئ متميز.",
+        "availableSurahs": [1, 18, 55, 75, 89]
+    },
+    {
+        "id": "toubar",
+        "nameArabic": "نصر الدين طوبار",
+        "nameEnglish": "Nasr Al-Din Toubar",
+        "country": "مصر",
+        "isEgyptianLibrary": true,
+        "serverUrl": "https://server8.mp3quran.net/toubar/",
+        "style": "أدعية - مجود",
+        "biography": "المبتهل الأول في مصر.",
+        "availableSurahs": [1, 55, 89]
+    }
+]

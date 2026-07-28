@@ -1,0 +1,50 @@
+[
+    { 
+        "id": "ramadan", 
+        "title": "مجموعة رمضان", 
+        "icon": "fa-moon", 
+        "description": "تلاوات التراويح والتهجد من الحرمين الشريفين وكبار القراء",
+        "featuredReciters": ["muaiqly", "jaber", "jibreel", "mishary"],
+        "featuredSurahs": [2, 3, 25, 97]
+    },
+    { 
+        "id": "friday", 
+        "title": "يوم الجمعة", 
+        "icon": "fa-mosque", 
+        "description": "سنن الجمعة من سورة الكهف والجمعة والمنافقون",
+        "featuredReciters": ["banna", "ajmi", "shahat", "basit"],
+        "featuredSurahs": [18, 62, 63, 67]
+    },
+    { 
+        "id": "kids", 
+        "title": "براعم الإيمان (للأطفال)", 
+        "icon": "fa-child-reaching", 
+        "description": "قصار السور وتلاوات سهلة الحفظ والتلقين",
+        "featuredReciters": ["husary", "minshawi"],
+        "featuredSurahs": [78, 87, 93, 97, 112, 113, 114]
+    },
+    { 
+        "id": "funeral", 
+        "title": "تلاوات العزاء والمحافل", 
+        "icon": "fa-users", 
+        "description": "أقوى التلاوات المجودة والمؤثرة من كبار القراء المصريين",
+        "featuredReciters": ["laythi", "saeed", "shahat", "sharqawi", "shuaisha"],
+        "featuredSurahs": [89, 36, 55, 75]
+    },
+    { 
+        "id": "rare", 
+        "title": "التسجيلات النادرة", 
+        "icon": "fa-gem", 
+        "description": "تراث الإذاعة المصرية والتسجيلات التاريخية الكلاسيكية",
+        "featuredReciters": ["rifaat", "mustafa", "bahtimi", "fashni"],
+        "featuredSurahs": [12, 19, 20, 50]
+    },
+    { 
+        "id": "night_prayer", 
+        "title": "قيام الليل والتهجد", 
+        "icon": "fa-star-and-crescent", 
+        "description": "تلاوات خاشعة وهادئة تناسب سكون الليل",
+        "featuredReciters": ["dosari", "minshawi", "jibreel"],
+        "featuredSurahs": [32, 73, 76, 67]
+    }
+]

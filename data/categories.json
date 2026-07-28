@@ -1,0 +1,12 @@
+[
+    { "id": "complete", "title": "المصحف المرتل كاملاً", "icon": "fa-book-quran", "theme": "primary" },
+    { "id": "mujawwad", "title": "المصحف المجود", "icon": "fa-microphone-lines", "theme": "secondary" },
+    { "id": "rare", "title": "التسجيلات النادرة", "icon": "fa-gem", "theme": "gold" },
+    { "id": "historical", "title": "المكتبة التاريخية", "icon": "fa-landmark", "theme": "dark" },
+    { "id": "funeral", "title": "تلاوات العزاء والمحافل", "icon": "fa-moon", "theme": "black" },
+    { "id": "ramadan", "title": "مجموعة رمضان", "icon": "fa-star-and-crescent", "theme": "primary" },
+    { "id": "friday", "title": "تلاوات يوم الجمعة", "icon": "fa-mosque", "theme": "secondary" },
+    { "id": "night", "title": "قيام الليل", "icon": "fa-cloud-moon", "theme": "dark" },
+    { "id": "morning", "title": "استماع الصباح", "icon": "fa-sun", "theme": "gold" },
+    { "id": "kids", "title": "قرآن للأطفال", "icon": "fa-child", "theme": "primary" }
+]
