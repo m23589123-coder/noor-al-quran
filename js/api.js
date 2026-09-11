@@ -1,7 +1,10 @@
-// js/api.js - Production-Ready API & Resource Verification Engine
+// js/api.js - Ultimate Premium Data Fetching & Smart Fallback
 
-export const DEFAULT_RECITER_IMAGE = 'assets/images/default-reciter.webp';
-export const DEFAULT_COVER_IMAGE = 'assets/images/default-cover.webp';
+// صور احتياطية فخمة (Premium Islamic Fallbacks) بصيغة WebP لسرعة التحميل
+export const FALLBACK_IMAGES = {
+    avatar: 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=300&q=80',
+    cover: 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=1200&q=80'
+};
 
 export const API = {
     async fetchJson(url) {
@@ -10,48 +13,50 @@ export const API = {
             if (!response.ok) return null;
             return await response.json();
         } catch (error) {
-            console.error(`Error loading resource ${url}:`, error);
+            console.error(`Error fetching ${url}:`, error);
             return null;
         }
     },
 
-    async getConfig() { 
-        return await this.fetchJson('data/config.json') || {
-            developer: { name: "Engineer Moaz Mahmoud", copyright: "Designed & Developed by" },
-            social: { whatsapp: "https://wa.me/2001276015281", facebook: "#", github: "#", email: "#" }
-        }; 
-    },
-
+    async getConfig() { return await this.fetchJson('data/config.json') || null; },
     async getSurahs() { return await this.fetchJson('data/surahs.json') || []; },
     async getRadios() { return await this.fetchJson('data/radio.json') || []; },
     async getAzkar() { return await this.fetchJson('data/azkar.json') || []; },
     async getTafsir() { return await this.fetchJson('data/tafsir.json') || []; },
     async getPlaylists() { return await this.fetchJson('data/playlists.json') || []; },
-    async getCollections() { return await this.fetchJson('data/collections.json') || []; },
-
+    
+    // جلب القراء مع المعالجة الذكية للصور
     async getReciters() {
         const data = await this.fetchJson('data/reciters.json') || [];
         return data.map(reciter => {
-            reciter.displayPhoto = (reciter.images && reciter.images.profile) ? reciter.images.profile : DEFAULT_RECITER_IMAGE;
-            reciter.displayCover = (reciter.images && reciter.images.cover) ? reciter.images.cover : DEFAULT_COVER_IMAGE;
+            // ضمان وجود صورة دائماً (Smart Fallback)
+            reciter.displayPhoto = (reciter.images && reciter.images.profile) || (reciter.images && reciter.images.fallback) || FALLBACK_IMAGES.avatar;
+            reciter.displayCover = (reciter.images && reciter.images.cover) || FALLBACK_IMAGES.cover;
             return reciter;
         });
     },
 
     async getReciterById(id) {
         const reciters = await this.getReciters();
-        return reciters.find(r => r.id === id) || null;
+        return reciters.find(r => r.id === id);
     },
 
-    // التحقق من صحة وجود الرابط الصوتي مسبقاً لمنع أي 404 أو NotSupportedError
-    async verifyAudioUrl(url) {
-        if (!url) return false;
-        try {
-            const res = await fetch(url, { method: 'HEAD' });
-            return res.ok;
-        } catch {
-            // في بيئة المتصفح المحالية قد تمنع CORS طلبات HEAD، لذا نعتمد على سلامة السيرفرات المعتمدة
-            return true; 
+    async getCollections() {
+        return await this.fetchJson('data/collections.json') || [];
+    },
+
+    // دالة التوصيات الذكية (Smart Content Generator)
+    // إذا كانت الفئة فارغة، تقوم بجلب محتوى مشابه لتجنب الشاشات الفارغة
+    async getSmartRecommendations(type, limit = 6) {
+        if (type === 'reciters') {
+            const reciters = await this.getReciters();
+            // خلط المصفوفة لجلب مقترحات عشوائية ذكية
+            return reciters.sort(() => 0.5 - Math.random()).slice(0, limit);
         }
+        if (type === 'surahs') {
+            const surahs = await this.getSurahs();
+            return surahs.sort(() => 0.5 - Math.random()).slice(0, limit);
+        }
+        return [];
     }
 };

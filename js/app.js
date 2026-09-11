@@ -6,7 +6,22 @@ import { Router } from './router.js';
 import { SettingsManager } from './theme.js';
 import { StorageManager } from './storage.js';
 import { initCustomCursor } from './cursor.js';
-
+// نظام حماية الصور (Image Fallback System)
+// ضع صورة باسم default-reciter.webp في مجلد assets/images/
+window.handleImageError = function(imgElement) {
+    const fallbackImage = 'assets/images/default-reciter.webp';
+    // نتحقق لكي لا ندخل في Loop لا نهائي إذا كانت الصورة البديلة غير موجودة أيضاً
+    if (imgElement && imgElement.src !== fallbackImage && !imgElement.src.includes(fallbackImage)) {
+        imgElement.onerror = null; 
+        imgElement.src = fallbackImage;
+    } else {
+        // في حال فشل كل شيء، نخفي الصورة ونظهر أيقونة
+        imgElement.style.display = 'none';
+        if (imgElement.nextElementSibling && imgElement.nextElementSibling.classList.contains('fallback-icon')) {
+            imgElement.nextElementSibling.classList.remove('d-none');
+        }
+    }
+};
 // ==========================================
 // 1. التهيئة الأساسية (Initialization)
 // ==========================================
@@ -1056,3 +1071,33 @@ function showPlayerUI() {
         if(typeof gsap !== 'undefined') gsap.to(p, { y: 0, opacity: 1, duration: 0.5 });
     }
 }
+// نظام تبديل المظهر (Dark / Light Mode)
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('themeToggleBtn');
+    const toggleIcon = document.getElementById('themeToggleIcon');
+    
+    // سحب الوضع المحفوظ من المتصفح (ولو مفيش هنخليه ليلي افتراضياً)
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateIcon(savedTheme);
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateIcon(newTheme);
+        });
+    }
+
+    function updateIcon(theme) {
+        if (!toggleIcon) return;
+        if (theme === 'light') {
+            toggleIcon.className = 'fa-solid fa-moon fs-4';
+        } else {
+            toggleIcon.className = 'fa-solid fa-sun fs-4';
+        }
+    }
+});

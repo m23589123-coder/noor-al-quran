@@ -1,0 +1,47 @@
+/* css/theme.css */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* الوضع الليلي الفاخر (Default) */
+    --bg-primary: #04100C;          
+    --bg-secondary: #081D15;        
+    --surface: rgba(12, 38, 28, 0.75); 
+    --text-primary: #F3F4F1;        
+    --text-secondary: #A3B8AC;      
+    --accent-gold: #D4AF37;         
+    --border-color: rgba(212, 175, 55, 0.12); 
+    --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.5);
+    --player-bg: rgba(4, 16, 12, 0.92);
+}
+
+[data-theme="light"] {
+    /* الوضع النهاري الفاخر */
+    --bg-primary: #F8F6F0;          
+    --bg-secondary: #EFECE4;        
+    --surface: #FFFFFF;             
+    --text-primary: #12261E;        
+    --text-secondary: #526B5E;      
+    --accent-gold: #9A7B1C;         
+    --border-color: rgba(18, 38, 30, 0.1); 
+    --shadow-soft: 0 10px 30px rgba(18, 38, 30, 0.06);
+    --player-bg: rgba(248, 246, 240, 0.95);
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Cairo', sans-serif;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+h1, h2, h3, .font-quran { font-family: 'Amiri', serif; }
+
+.card, .glass-panel, .glass-nav {
+    background-color: var(--surface) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+
+.text-white { color: var(--text-primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.player-bottom { background-color: var(--player-bg) !important; }

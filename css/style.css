@@ -1,5 +1,85 @@
 /* css/style.css - Premium Core Styles & Variables (100% COMPLETE) */
+/* css/theme.css - Premium Islamic Design System */
 
+:root {
+    /* =========================================
+       الوضع الليلي (Dark Mode - Default)
+       ========================================= */
+    --bg-primary: #071A13;      /* أخضر ليلي عميق جدًا */
+    --bg-secondary: #0A241A;    /* درجة أفتح للخلفيات الثانوية */
+    --surface: rgba(16, 42, 31, 0.7); /* زجاجي أنيق للبطاقات */
+    
+    --text-primary: #FFFFFF;
+    --text-secondary: #A0B2AA;
+    
+    --accent-color: #D4AF37;    /* ذهبي هادئ */
+    --accent-hover: #F3C94D;
+    
+    --border-color: rgba(212, 175, 55, 0.15);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+    
+    --player-bg: rgba(7, 26, 19, 0.95);
+}
+
+/* =========================================
+   الوضع النهاري الفاخر (Premium Light Mode)
+   ========================================= */
+[data-theme="light"] {
+    --bg-primary: #F9F7F3;      /* عاجي دافئ (Warm Ivory) يريح العين في القراءة */
+    --bg-secondary: #F0EBE1;    /* رملي ناعم جدًا */
+    --surface: #FFFFFF;         /* أبيض نقي للبطاقات لعمل تباين */
+    
+    --text-primary: #1A2F24;    /* أخضر غامق جداً بدلاً من الأسود لقراءة مريحة */
+    --text-secondary: #5C7065;
+    
+    --accent-color: #A67C00;    /* ذهبي معتق مناسب للوضع النهاري */
+    --accent-hover: #8B6800;
+    
+    --border-color: rgba(26, 47, 36, 0.08);
+    --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.05);
+    
+    --player-bg: rgba(255, 255, 255, 0.95);
+}
+
+/* Transitions للتنقل الناعم بين الأوضاع */
+body, .card, .glass-nav, .player-bottom, h1, h2, h3, p, span {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* تطبيق المتغيرات على العناصر الأساسية */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Cairo', sans-serif; /* الخطوط العربية الأساسية */
+}
+
+.card, .glass-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+    border-radius: 16px; /* زوايا ناعمة Premium */
+}
+
+.text-muted-custom {
+    color: var(--text-secondary) !important;
+}
+
+.btn-primary-custom {
+    background-color: var(--accent-color);
+    color: #FFF !important;
+    border: none;
+}
+.btn-primary-custom:hover {
+    background-color: var(--accent-hover);
+}
+
+/* تنسيق المشغل السفلي */
+.player-bottom {
+    background-color: var(--player-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-top: 1px solid var(--border-color);
+}
 :root {
     /* الوضع المظلم (الافتراضي - Premium Dark) */
     --primary-color: #0F6B4A;
