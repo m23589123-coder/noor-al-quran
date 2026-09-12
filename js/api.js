@@ -42,7 +42,7 @@ export const API = {
     // تم إصلاح الإذاعة وحطيت السيرفرات في الكود مباشرة عشان متضربش أبداً
     async getRadios() { 
         return [
-            { nameArabic: "إذاعة القرآن الكريم (القاهرة)", url: "https://stream.radioquraan.com/egypt", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=400&q=80" },
+            { nameArabic: "إذاعة القرآن الكريم (القاهرة)", url:"https://n0a.radiojar.com/8s5u5tpdtwzuv", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=400&q=80" },
             { nameArabic: "إذاعة عبد الباسط عبد الصمد", url: "https://qurango.net/radio/abdulbasit_abdulsamad", image: "https://images.unsplash.com/photo-1585036156171-384164a8c675?auto=format&fit=crop&w=400&q=80" },
             { nameArabic: "إذاعة محمد صديق المنشاوي", url: "https://qurango.net/radio/mohammed_siddiq_alminshawi", image: "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=400&q=80" },
             { nameArabic: "إذاعة محمود خليل الحصري", url: "https://qurango.net/radio/mahmoud_khalil_alhussary", image: "https://images.unsplash.com/photo-1564121211835-e88c852648ab?auto=format&fit=crop&w=400&q=80" }
