@@ -44,4 +44,28 @@ h1, h2, h3, .font-quran { font-family: 'Amiri', serif; }
 
 .text-white { color: var(--text-primary) !important; }
 .text-secondary { color: var(--text-secondary) !important; }
-.player-bottom { background-color: var(--player-bg) !important; }
+.player-bottom { background-color: var(--player-bg) !important; }/* =========================================================
+   إجبار كلاسات التصميم القديمة على احترام الـ Design System الجديد
+   ========================================================= */
+body, .bg-dark, .bg-black, #home, .main-bg {
+    background-color: var(--bg-primary) !important;
+}
+
+.text-white, .text-light {
+    color: var(--text-primary) !important;
+}
+
+.text-muted, .text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.card, .glass-panel, .glass-nav, .bg-glass, .player-bottom {
+    background-color: var(--surface) !important;
+    border-color: var(--border-color) !important;
+}
+
+.btn-primary, .btn-success {
+    background-color: var(--accent-gold) !important;
+    border-color: var(--accent-gold) !important;
+    color: #fff !important;
+}

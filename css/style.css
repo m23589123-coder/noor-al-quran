@@ -307,4 +307,42 @@ body {
 
 a {
     transition: color 0.3s ease;
+}/* =========================================
+   القوة الجبرية لتطبيق الألوان الجديدة (Redesign Override)
+   ========================================= */
+:root {
+    --bg-primary: #04100C;          
+    --surface: rgba(12, 38, 28, 0.75); 
+    --text-primary: #F3F4F1;        
+    --accent-gold: #D4AF37;         
+}
+
+[data-theme="light"] {
+    --bg-primary: #F8F6F0 !important;          
+    --surface: #FFFFFF !important;             
+    --text-primary: #12261E !important;        
+    --accent-gold: #9A7B1C !important;         
+}
+
+/* إجبار الخلفيات والنصوص */
+body, .bg-dark, .bg-black, main, section, footer {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* إجبار البطاقات وشريط القوائم والمشغل */
+.card, .glass-panel, .glass-nav, .player-bottom, .navbar {
+    background-color: var(--surface) !important;
+}
+
+/* إجبار النصوص بالكامل */
+h1, h2, h3, h4, p, span, a, .nav-link, .card-title {
+    color: var(--text-primary) !important;
+}
+
+/* إجبار الأزرار */
+.btn-primary, .btn-success, .btn-play-circle {
+    background-color: var(--accent-gold) !important;
+    border-color: var(--accent-gold) !important;
+    color: #fff !important;
 }

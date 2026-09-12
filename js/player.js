@@ -1,4 +1,4 @@
-// js/player.js - Premium Audio Engine (Production Ready)
+// js/player.js - Premium Audio Engine (Production Ready - Smart & Offline Supported)
 
 import { StorageManager } from './storage.js';
 
@@ -9,7 +9,7 @@ class AudioPlayer {
         
         this.isPlaying = false;
         this.isLoading = false;
-        this.currentMode = null; // 'SURAH' or 'RADIO'
+        this.currentMode = null; // 'SURAH' أو 'RADIO'
         this.currentSurah = null;
         this.currentReciter = null;
         this.currentRadio = null;
@@ -27,15 +27,27 @@ class AudioPlayer {
             subtitleEl: document.getElementById('current-reader'),
             volumeInput: document.getElementById('volume'),
             coverImage: document.getElementById('player-cover'),
-            fallbackIcon: document.getElementById('player-fallback-icon')
+            fallbackIcon: document.getElementById('player-fallback-icon'),
+            // استهداف أزرار التقديم والتأخير من الواجهة
+            nextBtn: document.querySelector('.fa-forward-step') ? document.querySelector('.fa-forward-step').closest('button') : null,
+            prevBtn: document.querySelector('.fa-backward-step') ? document.querySelector('.fa-backward-step').closest('button') : null
         };
 
         this.initEventListeners();
     }
 
     initEventListeners() {
+        // زرار التشغيل والإيقاف
         if (this.elements.playBtn) {
             this.elements.playBtn.addEventListener('click', () => this.togglePlay());
+        }
+
+        // أزرار التقديم والتأخير 15 ثانية (الميزة الجديدة)
+        if (this.elements.nextBtn) {
+            this.elements.nextBtn.addEventListener('click', () => this.skipTime(15));
+        }
+        if (this.elements.prevBtn) {
+            this.elements.prevBtn.addEventListener('click', () => this.skipTime(-15));
         }
 
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -66,18 +78,26 @@ class AudioPlayer {
             this.updatePlayIcon();
             if (this.elements.progressBar) this.elements.progressBar.style.width = '0%';
             if (this.currentMode === 'SURAH') {
-                StorageManager.incrementSurahsCompleted();
-                StorageManager.clearContinueListening();
+                if(window.StorageManager) {
+                    StorageManager.incrementSurahsCompleted();
+                    StorageManager.clearContinueListening();
+                }
             }
         });
 
-        // Error Handling احترافي يمنع كراش المتصفح
+        // Error Handling احترافي يمنع كراش المتصفح ويدعم الأوفلاين
         this.audio.addEventListener('error', (e) => {
-            console.warn("Audio Stream Unavailable:", e);
+            console.warn("Audio Stream Error:", e);
             this.setLoadingState(false);
             this.isPlaying = false;
             this.updatePlayIcon();
-            StorageManager.showToast('عذراً، البث أو التسجيل غير متوفر حالياً.', 'error');
+            
+            // لو مفيش نت
+            if (!navigator.onLine) {
+                if(window.StorageManager) StorageManager.showToast('أنت غير متصل بالإنترنت. يرجى التحقق من الشبكة.', 'error');
+            } else {
+                if(window.StorageManager) StorageManager.showToast('عذراً، البث أو التسجيل غير متوفر حالياً.', 'error');
+            }
         });
     }
 
@@ -108,7 +128,9 @@ class AudioPlayer {
                 this.updatePlayIcon();
                 if (error.name !== 'AbortError') {
                     console.warn("Playback prevented:", error);
-                    StorageManager.showToast('تعذر التشغيل، يرجى المحاولة لاحقاً.', 'error');
+                    if(navigator.onLine && window.StorageManager) {
+                        StorageManager.showToast('تعذر التشغيل، يرجى المحاولة لاحقاً.', 'error');
+                    }
                 }
             });
         }
@@ -127,8 +149,9 @@ class AudioPlayer {
         
         this.safePlay(`${baseUrl}${fileName}`).then(() => {
             if (startTime > 0) this.audio.currentTime = startTime;
-            this.updateMediaSession(surah.nameArabic, reciter.nameArabic, reciter.photo);
-            StorageManager.addToHistory(surah, reciter);
+            // تحديث شاشة القفل بكل البيانات
+            this.updateMediaSession(surah.nameArabic, reciter.nameArabic, reciter.displayPhoto || reciter.photo);
+            if(window.StorageManager) StorageManager.addToHistory(surah, reciter);
         });
     }
 
@@ -143,6 +166,7 @@ class AudioPlayer {
         if (this.elements.progressBar) this.elements.progressBar.style.width = '100%';
 
         this.safePlay(radio.url).then(() => {
+            // تحديث شاشة القفل بكل البيانات
             this.updateMediaSession(radio.nameArabic, 'إذاعة القرآن الكريم', radio.image);
         });
     }
@@ -156,6 +180,17 @@ class AudioPlayer {
             this.safePlay(this.audio.src);
         }
         this.updatePlayIcon();
+    }
+
+    // دالة التقديم والتأخير (الميزة الجديدة)
+    skipTime(seconds) {
+        if (this.currentMode === 'RADIO') return; // لا يوجد تقديم في البث المباشر
+        if (!isNaN(this.audio.duration)) {
+            let newTime = this.audio.currentTime + seconds;
+            // حماية عشان الوقت ميزيدش عن طول المقطع أو يقل عن صفر
+            newTime = Math.max(0, Math.min(newTime, this.audio.duration));
+            this.audio.currentTime = newTime;
+        }
     }
 
     setLoadingState(isLoading) {
@@ -180,7 +215,7 @@ class AudioPlayer {
         if (imageSrc && this.elements.coverImage) {
             this.elements.coverImage.src = imageSrc;
             this.elements.coverImage.onerror = () => {
-                this.elements.coverImage.src = 'assets/images/default-reciter.webp'; // Fallback
+                this.elements.coverImage.src = 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=300&q=80'; // Fallback
             };
             this.elements.coverImage.classList.remove('d-none');
             if (this.elements.fallbackIcon) this.elements.fallbackIcon.classList.add('d-none');
@@ -188,7 +223,7 @@ class AudioPlayer {
     }
 
     updateProgress() {
-        if (this.currentMode === 'RADIO') return; // لا يوجد تقدم في البث المباشر
+        if (this.currentMode === 'RADIO') return; 
         const { currentTime, duration } = this.audio;
         if (isNaN(duration) || !isFinite(duration)) return;
 
@@ -216,16 +251,25 @@ class AudioPlayer {
         return `${min < 10 ? '0' + min : min}:${sec < 10 ? '0' + sec : sec}`;
     }
 
+    // دعم شاشة القفل وسماعات البلوتوث والإشعارات (Media Session API)
     updateMediaSession(title, artist, artwork) {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: title,
                 artist: artist,
-                album: 'نور القرآن',
-                artwork: [{ src: artwork || 'assets/images/default-reciter.webp', sizes: '512x512', type: 'image/webp' }]
+                album: 'نور القرآن Premium',
+                artwork: [
+                    { src: artwork || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=512&q=80', sizes: '512x512', type: 'image/jpeg' }
+                ]
             });
+
+            // ربط أزرار سماعة البلوتوث وشاشة القفل بوظائف الموقع
             navigator.mediaSession.setActionHandler('play', () => this.togglePlay());
             navigator.mediaSession.setActionHandler('pause', () => this.togglePlay());
+            
+            // التقديم والتأخير من شاشة القفل (15 ثانية)
+            navigator.mediaSession.setActionHandler('seekforward', () => this.skipTime(15));
+            navigator.mediaSession.setActionHandler('seekbackward', () => this.skipTime(-15));
         }
     }
 }
