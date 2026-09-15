@@ -1,20 +1,20 @@
 {
-  "name": "نور القرآن Premium",
+  "name": "نور القرآن الكريم",
   "short_name": "نور القرآن",
-  "description": "منصة قرآنية متكاملة لاستماع وقراءة القرآن الكريم بأصوات كبار القراء بتصميم فاخر.",
-  "start_url": "./index.html",
+  "description": "منصة قرآنية متكاملة للاستماع لأكثر من 200 قارئ",
+  "start_url": "/#/",
   "display": "standalone",
-  "background_color": "#071A13",
-  "theme_color": "#D4AF37",
-  "orientation": "portrait-primary",
+  "background_color": "#071a13",
+  "theme_color": "#d4af37",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3592/3592398.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3389/3389081.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3592/3592398.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3389/3389081.png",
       "sizes": "512x512",
       "type": "image/png"
     }

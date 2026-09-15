@@ -1,4 +1,4 @@
-// js/app.js - Ultimate Premium Application Engine (Final Release - Fixed Search & Islamic UI)
+// js/app.js - Ultra Premium Edition (Part 1 - 100% Fixed Routes & Content)
 
 import { API } from './api.js';
 import { globalPlayer } from './player.js';
@@ -8,104 +8,134 @@ import { StorageManager } from './storage.js';
 import { initCustomCursor } from './cursor.js';
 
 // ==========================================
-// 1. نظام حماية الصور المركزي
+// 1. نظام الأذان التلقائي 
 // ==========================================
-window.handleImageError = function(imgElement, type = 'avatar') {
-    const fallbackImage = type === 'cover' 
-        ? 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=1200&q=80'
-        : 'assets/images/default-reciter.webp';
-
-    if (imgElement && imgElement.src !== fallbackImage && !imgElement.src.includes('default')) {
-        imgElement.onerror = null; 
-        imgElement.src = fallbackImage;
-    } else {
-        imgElement.style.display = 'none';
-        if (imgElement.nextElementSibling && imgElement.nextElementSibling.classList.contains('fallback-icon')) {
-            imgElement.nextElementSibling.classList.remove('d-none');
+class AdhanManager {
+    static init() {
+        this.prayers = {};
+        this.adhanAudio = new Audio('https://download.quranicaudio.com/adhan/makkah.mp3');
+        this.hasPlayed = {};
+        
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
         }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => this.fetchPrayerTimesByLocation(position.coords.latitude, position.coords.longitude),
+                () => this.fetchPrayerTimesByCity("Hurghada", "Egypt")
+            );
+        } else {
+            this.fetchPrayerTimesByCity("Hurghada", "Egypt");
+        }
+        setInterval(() => this.checkPrayerTime(), 60000);
+    }
+
+    static async fetchPrayerTimesByLocation(lat, lng) {
+        try {
+            const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=5`);
+            const data = await res.json();
+            this.setPrayers(data.data.timings);
+        } catch(e) { console.error("Adhan Location Error", e); }
+    }
+
+    static async fetchPrayerTimesByCity(city, country) {
+        const timings = await API.getPrayerTimes(city, country);
+        if (timings) this.setPrayers(timings);
+    }
+
+    static setPrayers(timings) {
+        this.prayers = { 'الفجر': timings.Fajr, 'الظهر': timings.Dhuhr, 'العصر': timings.Asr, 'المغرب': timings.Maghrib, 'العشاء': timings.Isha };
+        this.hasPlayed = {};
+    }
+
+    static checkPrayerTime() {
+        if (!this.prayers || Object.keys(this.prayers).length === 0) return;
+        const now = new Date();
+        const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        for (let [name, time] of Object.entries(this.prayers)) {
+            if (time === currentTime && !this.hasPlayed[name]) {
+                this.playAdhan(name);
+                this.hasPlayed[name] = true;
+            }
+        }
+    }
+
+    static playAdhan(prayerName) {
+        this.adhanAudio.currentTime = 0;
+        this.adhanAudio.play().catch(e => console.log("Adhan blocked"));
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(`حان الآن موعد أذان ${prayerName}`, { body: "حي على الصلاة، حي على الفلاح", icon: "https://cdn-icons-png.flaticon.com/512/3389/3389081.png" });
+        }
+    }
+}
+
+const ISLAMIC_FALLBACK_IMG = 'https://images.unsplash.com/photo-1608501821300-4f99e58bba77?auto=format&fit=crop&w=1200&q=80';
+const ISLAMIC_MOSQUE_IMG = 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80';
+
+window.handleImageError = function(imgElement) {
+    if (imgElement && imgElement.src !== ISLAMIC_FALLBACK_IMG) {
+        imgElement.onerror = null; imgElement.src = ISLAMIC_FALLBACK_IMG;
     }
 };
 
-// ==========================================
-// 2. التهيئة الأساسية (Initialization)
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    initApp();
-});
+document.addEventListener('DOMContentLoaded', () => { initApp(); });
 
 async function initApp() {
     try {
         SettingsManager.init();
         initCustomCursor();
-        
+        AdhanManager.init();
         if(typeof window.AOS !== 'undefined') window.AOS.init({ once: true, offset: 50, duration: 800 });
-        
         let config = null;
         try { config = await API.getConfig(); } catch(e) {}
-        
         if(config && config.developer) {
             const footerText = document.querySelector('footer p.small');
-            if(footerText) {
-                footerText.innerHTML = `${config.developer.copyright} <br> <span class="fw-bold text-secondary">${config.developer.name}</span>`;
-            }
+            if(footerText) footerText.innerHTML = `${config.developer.copyright} <br> <span class="fw-bold text-secondary">${config.developer.name}</span>`;
         }
 
-        setupRoutes();
+        setupRoutes(); // المنظومة الكاملة للمسارات
         Router.init();
-
-        if (!window.location.hash || window.location.hash === '') {
-            window.location.hash = '#/home';
-        }
-
+        
+        if (!window.location.hash || window.location.hash === '') window.location.hash = '#/home';
         document.querySelectorAll('[aria-label="Search"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.location.hash = '#/search';
-            });
+            btn.addEventListener('click', (e) => { e.preventDefault(); window.location.hash = '#/search'; });
         });
+    } catch (error) { console.error("Init Error:", error); }
+}
 
-        if(typeof gsap !== 'undefined') {
-            gsap.from(".navbar-brand", { opacity: 0, x: 20, duration: 1, delay: 0.2 });
-            gsap.set("#global-player", { y: 100, opacity: 0 }); 
-        }
-    } catch (error) {
-        console.error("Init Error:", error);
-    }
+function formatAMPM(time24) {
+    let [hours, minutes] = time24.split(':');
+    hours = parseInt(hours);
+    let ampm = hours >= 12 ? 'م' : 'ص';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return hours + ':' + minutes + ' ' + ampm;
 }
 
 // ==========================================
-// 3. إدارة المسارات
+// 2. منظومة المسارات الشاملة (جميع الأقسام)
 // ==========================================
 function setupRoutes() {
     
-    // ----------------------------------------
-    // مسار الصفحة الرئيسية
-    // ----------------------------------------
+    // --- 1. الرئيسية ---
     const homeRouteHandler = async (container) => {
         try {
-            let surahs = [];
-            let reciters = [];
+            let surahs = []; let reciters = [];
             try { surahs = await API.getSurahs(); if(!Array.isArray(surahs)) surahs = []; } catch(e) {}
             try { reciters = await API.getReciters(); if(!Array.isArray(reciters)) reciters = []; } catch(e) {}
-            
-            const topSurahs = surahs.slice(0, 6);
-            const topReciters = reciters.slice(0, 4);
+            const topSurahs = surahs.slice(0, 6); const topReciters = reciters.slice(0, 4);
 
             let homeHtml = `
                 <section class="position-relative d-flex align-items-center justify-content-center mb-5 overflow-hidden rounded-4 mt-2 shadow-lg" style="min-height: 75vh; border: 1px solid rgba(212, 175, 55, 0.1);">
-                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1920&q=80') center/cover; filter: brightness(0.3);"></div>
+                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('${ISLAMIC_MOSQUE_IMG}') center/cover; filter: brightness(0.3);"></div>
                     <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="background: radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, transparent 60%);"></div>
-
                     <div class="container z-1 position-relative text-center" data-aos="zoom-out" data-aos-duration="1500">
-                        <div class="mx-auto p-4 p-md-5" style="max-width: 850px; border-radius: 30px; background: rgba(12, 38, 28, 0.4); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(212, 175, 55, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-                            <div class="d-inline-flex p-3 rounded-circle mb-4 shadow-lg" style="background: linear-gradient(135deg, var(--accent-gold), #8A6D1C);">
-                                <i class="fa-solid fa-book-quran text-white" style="font-size: 2.5rem;"></i>
-                            </div>
+                        <div class="mx-auto p-4 p-md-5" style="max-width: 850px; border-radius: 30px; background: rgba(12, 38, 28, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(212, 175, 55, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                            <div class="d-inline-flex p-3 rounded-circle mb-4 shadow-lg" style="background: linear-gradient(135deg, var(--accent-gold), #8A6D1C);"><i class="fa-solid fa-book-quran text-white" style="font-size: 2.5rem;"></i></div>
                             <h1 class="fw-bold mb-2" style="font-family: 'Amiri', serif; font-size: 3.5rem; text-shadow: 0 4px 15px rgba(0,0,0,0.5); color: #FFF;">نــور <span style="color: var(--accent-gold);">القــرآن</span></h1>
-                            <h2 class="text-white fw-bold mb-4 mt-3 font-cairo" style="font-size: 2rem; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">استمع للقرآن بنقاء وصفاء..</h2>
-                            <p class="fs-5 text-light mb-5 font-cairo lh-lg px-md-4" style="opacity: 0.9;">
-                                تجربة روحانية تأخذك في رحلة من السكينة والطمأنينة، مع نخبة من كبار قراء العالم الإسلامي في منصة صُممت لتريح العين وتلامس القلب.
-                            </p>
+                            <h2 class="text-white fw-bold mb-4 mt-3 font-cairo" style="font-size: 2rem;">استمع للقرآن بنقاء وصفاء..</h2>
+                            <p class="fs-5 text-light mb-5 font-cairo lh-lg px-md-4">أكثر من 200 قارئ من جميع أنحاء العالم.</p>
                             <div class="d-flex justify-content-center gap-3 flex-wrap">
                                 <button class="btn btn-primary-custom rounded-pill px-5 py-3 fw-bold fs-5 shadow-lg d-flex align-items-center gap-2" onclick="window.location.hash='#/quran'"><i class="fa-solid fa-headphones-simple"></i> ابدأ الاستماع</button>
                                 <button class="btn btn-outline-light rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm d-flex align-items-center gap-2 bg-glass border-2" onclick="window.location.hash='#/radio'"><i class="fa-solid fa-tower-broadcast text-warning"></i> الإذاعة المباشرة</button>
@@ -113,7 +143,6 @@ function setupRoutes() {
                         </div>
                     </div>
                 </section>
-
                 <section class="container py-5" data-aos="fade-up">
                     <div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-3" style="border-color: rgba(255,255,255,0.05) !important;">
                         <h3 class="fw-bold mb-0 text-white"><i class="fa-solid fa-star text-secondary me-2"></i> سور مختارة</h3>
@@ -121,328 +150,75 @@ function setupRoutes() {
                     </div>
                     <div class="row g-4 mb-5">
             `;
-            
             if(topSurahs.length > 0) topSurahs.forEach(s => homeHtml += buildSurahCard(s));
-            else homeHtml += `<div class="col-12 text-center text-muted-custom">لا توجد بيانات حالياً.</div>`;
-            
-            homeHtml += `
-                    </div>
-                    <div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-3 mt-5" style="border-color: rgba(255,255,255,0.05) !important;">
-                        <h3 class="fw-bold mb-0 text-white"><i class="fa-solid fa-microphone-lines text-secondary me-2"></i> قراء مميزون</h3>
-                        <a href="#/readers" class="text-secondary text-decoration-none fw-bold hover-lift">عرض الكل <i class="fa-solid fa-arrow-left ms-1"></i></a>
-                    </div>
-                    <div class="row g-4">
-            `;
-            
+            homeHtml += `</div><div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-3 mt-5"><h3 class="fw-bold mb-0 text-white"><i class="fa-solid fa-microphone-lines text-secondary me-2"></i> قراء مميزون</h3><a href="#/readers" class="text-secondary text-decoration-none fw-bold hover-lift">عرض الكل <i class="fa-solid fa-arrow-left ms-1"></i></a></div><div class="row g-4">`;
             if(topReciters.length > 0) topReciters.forEach(r => homeHtml += buildReciterCard(r));
-            
             homeHtml += `</div></section>`;
             container.innerHTML = homeHtml;
             if(topSurahs.length > 0) attachCardEvents(topSurahs, null);
-        } catch (error) {
-            container.innerHTML = `<div class="alert alert-danger text-center m-5">خطأ في تحميل الصفحة الرئيسية.</div>`;
-        }
+        } catch (error) {}
     };
-    Router.addRoute('#/home', homeRouteHandler);
-    Router.addRoute('#/', homeRouteHandler);
-    Router.addRoute('', homeRouteHandler);
+    Router.addRoute('#/home', homeRouteHandler); Router.addRoute('#/', homeRouteHandler); Router.addRoute('', homeRouteHandler);
 
-    // ----------------------------------------
-    // مسار البحث الشامل (المسار الجديد الفخم) 🔍
-    // ----------------------------------------
-    Router.addRoute('#/search', async (container) => {
-        try {
-            let surahs = []; let reciters = [];
-            try { surahs = await API.getSurahs(); if(!Array.isArray(surahs)) surahs = []; } catch(e){}
-            try { reciters = await API.getReciters(); if(!Array.isArray(reciters)) reciters = []; } catch(e){}
-            
-            container.innerHTML = `
-                <section class="container py-5" data-aos="fade-in">
-                    <div class="text-center mb-5">
-                        <h2 class="fw-bold text-white mb-3 font-cairo"><i class="fa-solid fa-search text-warning me-2"></i> البحث الشامل</h2>
-                        <div class="search-box bg-dark rounded-pill px-4 py-3 d-flex align-items-center mx-auto shadow-lg" style="max-width: 600px; border: 1px solid var(--accent-gold);">
-                            <i class="fa-solid fa-search text-warning fs-5 ms-3"></i>
-                            <input type="text" id="global-search-input" class="form-control bg-transparent border-0 text-white shadow-none fs-5 font-cairo" placeholder="ابحث عن اسم السورة أو القارئ..." autofocus>
-                        </div>
-                    </div>
-                    <div id="search-results-container" class="d-none">
-                        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fa-solid fa-book-open me-2 text-secondary"></i>النتائج في السور القرآنية</h4>
-                        <div class="row g-4 mb-5" id="surahs-results"></div>
-                        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fa-solid fa-users me-2 text-secondary"></i>النتائج في القراء</h4>
-                        <div class="row g-4" id="reciters-results"></div>
-                    </div>
-                    <div id="search-empty-state" class="text-center py-5 text-muted-custom">
-                        <i class="fa-solid fa-keyboard fs-1 mb-3 opacity-50" style="font-size: 4rem;"></i>
-                        <h5 class="font-cairo">اكتب اسم السورة أو القارئ لعرض النتائج فوراً</h5>
-                    </div>
-                </section>
-            `;
-
-            const input = document.getElementById('global-search-input');
-            const resultsContainer = document.getElementById('search-results-container');
-            const emptyState = document.getElementById('search-empty-state');
-            const surahsResults = document.getElementById('surahs-results');
-            const recitersResults = document.getElementById('reciters-results');
-
-            input.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase().trim();
-                if (term === '') {
-                    resultsContainer.classList.add('d-none');
-                    emptyState.classList.remove('d-none');
-                    return;
-                }
-                resultsContainer.classList.remove('d-none');
-                emptyState.classList.add('d-none');
-
-                const filteredSurahs = surahs.filter(s => s.nameArabic.includes(term) || s.nameEnglish.toLowerCase().includes(term));
-                surahsResults.innerHTML = filteredSurahs.length > 0 ? filteredSurahs.map(s => buildSurahCard(s)).join('') : '<div class="col-12 text-muted-custom">لا توجد سور مطابقة للبحث.</div>';
-
-                const filteredReciters = reciters.filter(r => r.nameArabic.includes(term));
-                recitersResults.innerHTML = filteredReciters.length > 0 ? filteredReciters.map(r => buildReciterCard(r)).join('') : '<div class="col-12 text-muted-custom">لا يوجد قراء مطابقين للبحث.</div>';
-
-                attachCardEvents(surahs, null);
-            });
-        } catch (error) {
-            container.innerHTML = `<div class="alert alert-danger m-5">حدث خطأ في تحميل البحث.</div>`;
-        }
-    });
-
-    // ----------------------------------------
-    // مسار الإذاعة
-    // ----------------------------------------
+    // --- 2. الإذاعة ---
     Router.addRoute('#/radio', async (container) => {
         try {
-            let radios = [];
-            try { radios = await API.getRadios(); if(!Array.isArray(radios)) radios = []; } catch(e) {}
-            
+            const radios = await API.getRadios();
             let html = `
                 <section class="container py-5" data-aos="fade-up">
-                    <div class="d-flex align-items-center mb-5">
-                        <i class="fa-solid fa-radio fs-1 text-warning me-3"></i>
-                        <div><h2 class="fw-bold mb-0">إذاعة القرآن الكريم</h2><p class="text-muted-custom mt-1">بث مباشر على مدار الساعة</p></div>
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('${ISLAMIC_MOSQUE_IMG}') center/cover;">
+                        <div class="text-center z-1 position-relative px-3"><i class="fa-solid fa-tower-broadcast text-warning mb-3" style="font-size: 3.5rem;"></i><h1 class="fw-bold text-white font-cairo mb-2">الإذاعة المباشرة</h1></div>
                     </div>
                     <div class="row g-4">
             `;
-            if (radios.length > 0) {
-                radios.forEach(radio => {
-                    html += `
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card premium-card border-0 text-center p-4 h-100 shadow-sm hover-lift">
-                                <div class="position-relative d-inline-block mx-auto mb-4">
-                                    <img src="${radio.image || 'assets/images/default-reciter.webp'}" onerror="handleImageError(this, 'avatar')" class="rounded-circle shadow" style="width: 120px; height: 120px; object-fit: cover; border: 4px solid var(--border-color);">
-                                </div>
-                                <h5 class="fw-bold mb-3">${radio.nameArabic}</h5>
-                                <button class="btn btn-primary-custom w-100 rounded-pill py-2 fw-bold play-radio-btn" data-url="${radio.url}" data-name="${radio.nameArabic}" data-image="${radio.image}"><i class="fa-solid fa-play me-2"></i> تشغيل البث</button>
+            radios.forEach(radio => {
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card premium-card border-0 p-4 h-100 shadow-lg d-flex flex-row align-items-center" style="background: linear-gradient(145deg, #0c261c, #071a13); border: 1px solid rgba(212,175,55,0.2) !important; border-radius: 20px;">
+                            <div class="position-relative me-4" style="width: 80px; height: 80px;">
+                                <img src="${radio.image}" onerror="handleImageError(this)" class="rounded-circle shadow-lg w-100 h-100 object-fit-cover" style="border: 3px solid var(--accent-gold);">
                             </div>
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1 text-white font-cairo">${radio.nameArabic}</h5>
+                                <div class="d-flex align-items-center gap-2 mt-2"><span class="spinner-grow spinner-grow-sm text-danger" role="status"></span><small class="text-warning fw-bold">بث مباشر</small></div>
+                            </div>
+                            <button class="btn btn-primary-custom rounded-circle play-radio-btn d-flex align-items-center justify-content-center shadow-lg" style="width: 55px; height: 55px; border: 2px solid #fff;" data-url="${radio.url}" data-name="${radio.nameArabic}" data-image="${radio.image}"><i class="fa-solid fa-play fs-4" style="margin-left:4px;"></i></button>
                         </div>
-                    `;
-                });
-            } else { html += `<div class="col-12 text-center py-5 text-muted-custom">لا توجد محطات متاحة حالياً.</div>`; }
+                    </div>
+                `;
+            });
             html += `</div></section>`;
             container.innerHTML = html;
-
             container.querySelectorAll('.play-radio-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const target = e.currentTarget;
-                    const radioData = { nameArabic: target.getAttribute('data-name'), url: target.getAttribute('data-url'), image: target.getAttribute('data-image') };
                     if (window.globalPlayer || globalPlayer) {
                         const playerToUse = window.globalPlayer || globalPlayer;
-                        playerToUse.playRadio(radioData); showPlayerUI();
-                        const originalHtml = target.innerHTML;
-                        target.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> جاري الاتصال...';
-                        setTimeout(() => { target.innerHTML = originalHtml; }, 2000);
+                        playerToUse.playRadio({ nameArabic: target.getAttribute('data-name'), url: target.getAttribute('data-url'), image: target.getAttribute('data-image') });
+                        showPlayerUI();
                     }
                 });
             });
-        } catch(e) { container.innerHTML = `<div class="alert alert-danger m-5">خطأ في الإذاعة.</div>`; }
-    });
-
-    // ----------------------------------------
-    // مسار التفسير
-    // ----------------------------------------
-    Router.addRoute('#/tafsir', async (container) => {
-        const surahsList = ["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"];
-        let optionsHtml = '<option value="" disabled selected style="color: #000;">-- ابحث واختر السورة لعرض التفسير --</option>';
-        surahsList.forEach((name, index) => { optionsHtml += `<option value="${index + 1}" style="color: #000;">${index + 1}. سورة ${name}</option>`; });
-
-        let tafsirHtml = `
-            <section class="container py-5" data-aos="fade-in">
-                <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.2)), url('https://images.unsplash.com/photo-1585036156171-384164a8c675?auto=format&fit=crop&w=1200&q=80') center/cover;">
-                    <div class="text-center z-1 position-relative px-3"><i class="fa-solid fa-book-open-reader text-warning mb-3" style="font-size: 3rem;"></i><h1 class="fw-bold text-white font-cairo mb-2">موسوعة التفسير</h1><p class="text-light fs-5 mb-0 font-inter">اكتشف معاني القرآن الكريم من أوثق التفاسير المعتمدة</p></div>
-                </div>
-                <div class="row justify-content-center mb-5" data-aos="fade-up">
-                    <div class="col-lg-8">
-                        <div class="card bg-glass border-0 shadow-lg p-4 rounded-4" style="border: 1px solid rgba(212,175,55,0.2) !important;">
-                            <div class="d-flex align-items-center bg-dark rounded-pill px-3 py-2 border border-secondary shadow-inner">
-                                <i class="fa-solid fa-magnifying-glass text-warning me-3 ms-2 fs-5"></i>
-                                <select id="surahSelect" class="form-select bg-transparent text-white border-0 shadow-none fs-5 py-2 font-cairo fw-bold" style="cursor: pointer;">${optionsHtml}</select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="tafsirContentArea" class="d-none slide-up-animation">
-                    <ul class="nav nav-pills justify-content-center mb-4 gap-2 gap-md-3 custom-pills" id="tafsirTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active rounded-pill px-4 py-2 fw-bold shadow-sm" data-book="ar.muyassar">التفسير الميسر</button></li>
-                        <li class="nav-item"><button class="nav-link rounded-pill px-4 py-2 fw-bold shadow-sm" data-book="ar.jalalayn">تفسير الجلالين</button></li>
-                    </ul>
-                    <div class="card bg-glass text-white border-0 shadow-lg p-4 p-md-5 rounded-4 position-relative overflow-hidden" style="border-top: 4px solid var(--accent-gold) !important;">
-                        <div class="position-absolute top-0 end-0 p-3 d-flex gap-2 bg-dark rounded-bottom-4 shadow ms-4">
-                            <button class="btn btn-outline-warning btn-sm rounded-circle" id="increaseFont" title="تكبير الخط" style="width: 35px; height: 35px;"><i class="fa-solid fa-plus"></i></button>
-                            <button class="btn btn-outline-warning btn-sm rounded-circle" id="decreaseFont" title="تصغير الخط" style="width: 35px; height: 35px;"><i class="fa-solid fa-minus"></i></button>
-                        </div>
-                        <div class="text-center mb-4 mt-3"><h2 class="fw-bold text-warning font-cairo border-bottom border-secondary d-inline-block pb-3 px-5" id="tafsirTitle"></h2></div>
-                        <div id="tafsirLoader" class="text-center py-5 d-none"><div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;"></div><h5 class="font-cairo" id="loaderText">جاري جلب التفسير...</h5></div>
-                        <div id="tafsirText" class="px-md-4 py-3" style="transition: all 0.3s ease; min-height: 300px; font-family: 'Amiri', serif; font-size: 1.5rem; line-height: 2.2 !important; text-align: justify;"></div>
-                    </div>
-                </div>
-            </section>
-        `;
-        container.innerHTML = tafsirHtml;
-
-        let currentFontSize = 1.5; let currentSurahId = null; let currentBook = 'ar.muyassar'; 
-        const textEl = document.getElementById('tafsirText'); const loaderEl = document.getElementById('tafsirLoader'); const loaderText = document.getElementById('loaderText');
-
-        const fetchTafsir = async () => {
-            if(!currentSurahId) return;
-            textEl.innerHTML = ''; loaderEl.classList.remove('d-none'); loaderText.innerText = "جاري جلب التفسير...";
-            try {
-                const response = await fetch(`https://api.alquran.cloud/v1/sura/${currentSurahId}/${currentBook}`);
-                if(!response.ok) throw new Error("Primary API Failed");
-                const jsonResponse = await response.json(); let htmlContent = '';
-                if(jsonResponse.code === 200 && jsonResponse.data && jsonResponse.data.ayahs) {
-                    jsonResponse.data.ayahs.forEach(ayah => {
-                        htmlContent += `<div class="mb-5 pb-3 border-bottom border-secondary" style="border-color: rgba(255,255,255,0.05) !important;"><div class="d-flex align-items-center justify-content-between mb-3"><span class="badge bg-warning text-dark rounded-pill px-3 py-2 fs-6"><i class="fa-solid fa-book-quran me-1"></i> الآية ${ayah.numberInSurah}</span><button class="btn btn-sm btn-glass rounded-circle copy-ayah-btn shadow-sm" data-text="${ayah.text}"><i class="fa-solid fa-copy text-secondary"></i></button></div><p class="text-white m-0 lh-lg">${ayah.text}</p></div>`;
-                    });
-                    textEl.innerHTML = htmlContent;
-                } else throw new Error("No Data");
-            } catch (error) {
-                try {
-                    const backupResponse = await fetch(`https://quranenc.com/api/v1/translation/sura/arabic_moyassar/${currentSurahId}`);
-                    if(!backupResponse.ok) throw new Error("Backup API Failed");
-                    const backupData = await backupResponse.json(); let htmlContent = '';
-                    if(backupData.result && backupData.result.length > 0) {
-                        backupData.result.forEach(ayah => {
-                            htmlContent += `<div class="mb-5 pb-3 border-bottom border-secondary" style="border-color: rgba(255,255,255,0.05) !important;"><div class="d-flex align-items-center justify-content-between mb-3"><span class="badge bg-warning text-dark rounded-pill px-3 py-2 fs-6"><i class="fa-solid fa-book-quran me-1"></i> الآية ${ayah.aya}</span><button class="btn btn-sm btn-glass rounded-circle copy-ayah-btn shadow-sm" data-text="${ayah.translation}"><i class="fa-solid fa-copy text-secondary"></i></button></div><p class="text-white m-0 lh-lg">${ayah.translation}</p></div>`;
-                        });
-                        textEl.innerHTML = htmlContent;
-                    } else throw new Error("No Data");
-                } catch (backupError) {
-                    textEl.innerHTML = `<div class="text-center py-5 text-muted-custom"><i class="fa-solid fa-wifi fs-1 mb-4 text-secondary"></i><h4 class="font-cairo">عذراً، الاتصال بخوادم التفسير محظور من شبكتك الحالية.</h4></div>`;
-                }
-            } finally {
-                loaderEl.classList.add('d-none'); 
-                document.querySelectorAll('.copy-ayah-btn').forEach(btn => {
-                    btn.addEventListener('click', () => { navigator.clipboard.writeText(btn.getAttribute('data-text')).then(() => { if(window.StorageManager) StorageManager.showToast('تم نسخ التفسير بنجاح ✅'); else alert('تم نسخ التفسير بنجاح ✅'); }); });
-                });
-            }
-        };
-
-        document.getElementById('surahSelect').addEventListener('change', (e) => { currentSurahId = e.target.value; document.getElementById('tafsirContentArea').classList.remove('d-none'); document.getElementById('tafsirTitle').textContent = `تفسير سورة ${surahsList[currentSurahId - 1]}`; fetchTafsir(); });
-        document.querySelectorAll('#tafsirTabs .nav-link').forEach(tab => { tab.addEventListener('click', (e) => { document.querySelectorAll('#tafsirTabs .nav-link').forEach(t => t.classList.remove('active')); tab.classList.add('active'); currentBook = e.target.getAttribute('data-book'); fetchTafsir(); }); });
-        document.getElementById('increaseFont').addEventListener('click', () => { if(currentFontSize < 3) currentFontSize += 0.2; document.getElementById('tafsirText').style.fontSize = `${currentFontSize}rem`; });
-        document.getElementById('decreaseFont').addEventListener('click', () => { if(currentFontSize > 1) currentFontSize -= 0.2; document.getElementById('tafsirText').style.fontSize = `${currentFontSize}rem`; });
-    });
-
-    // ----------------------------------------
-    // مسار الأذكار (Azkar)
-    // ----------------------------------------
-    Router.addRoute('#/azkar', async (container) => {
-        try {
-            const azkarData = (await API.getAzkar().catch(() => [])) || [];
-            let azkarHtml = `<section class="container py-5" data-aos="fade-in"><div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1200&q=80') center/cover;"><div class="text-center z-1 position-relative px-3"><i class="fa-solid fa-hands-praying text-warning mb-3" style="font-size: 3.5rem;"></i><h1 class="fw-bold text-white font-cairo mb-2">حصن المسلم</h1></div></div><ul class="nav nav-pills justify-content-center mb-5 gap-2 custom-pills" id="azkarTabs" role="tablist">`;
-            azkarData.forEach((cat, index) => { azkarHtml += `<li class="nav-item"><button class="nav-link ${index === 0 ? 'active' : ''} rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#azkar-cat-${index}"><i class="fa-solid ${cat.icon || 'fa-star'} me-2"></i> ${cat.title}</button></li>`; });
-            azkarHtml += `</ul><div class="tab-content" id="azkarTabContent">`;
-            azkarData.forEach((cat, index) => {
-                azkarHtml += `<div class="tab-pane fade ${index === 0 ? 'show active' : ''}" id="azkar-cat-${index}"><div class="row g-4 justify-content-center">`;
-                cat.items.forEach((item, itemIdx) => {
-                    const count = item.count || 1;
-                    azkarHtml += `<div class="col-lg-8" data-aos="fade-up" data-aos-delay="${itemIdx * 50}"><div class="card bg-glass text-white border-0 shadow-sm p-0 rounded-4 premium-card zikr-interactive-card" data-count="${count}" style="cursor: pointer; border-right: 5px solid var(--accent-gold) !important; overflow: hidden; position: relative;"><div class="zikr-progress position-absolute top-0 end-0 h-100" style="width: 0%; background: rgba(212, 175, 55, 0.15); transition: width 0.3s ease; z-index: 0;"></div><div class="p-4 p-md-5 position-relative z-1 text-center"><p class="fs-4 lh-lg mb-4 font-cairo">${item.text}</p><div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-secondary"><button class="btn btn-glass btn-sm rounded-circle copy-zikr-btn" data-text="${item.text}"><i class="fa-solid fa-copy text-secondary"></i></button><div class="d-flex align-items-center gap-3"><span class="text-muted-custom small">اضغط للتسبيح</span><div class="bg-dark rounded-pill px-4 py-2 border border-warning shadow d-flex align-items-center gap-2"><i class="fa-solid fa-arrows-rotate text-warning"></i><span class="fw-bold fs-5 zikr-count-display">${count}</span></div></div></div></div><div class="done-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center opacity-0" style="background: rgba(12, 38, 28, 0.85); transition: all 0.4s ease; z-index: 2;"><div class="text-center"><i class="fa-solid fa-circle-check text-success mb-2" style="font-size: 4rem;"></i><h4 class="font-cairo fw-bold text-white">اكتمل</h4></div></div></div></div>`;
-                });
-                azkarHtml += `</div></div>`;
-            });
-            azkarHtml += `</div></section>`;
-            container.innerHTML = azkarHtml;
-
-            document.querySelectorAll('.zikr-interactive-card').forEach(card => {
-                let currentCount = parseInt(card.getAttribute('data-count'));
-                const initialCount = currentCount;
-                card.addEventListener('click', (e) => {
-                    if(e.target.closest('.copy-zikr-btn')) return;
-                    if (currentCount > 0) {
-                        currentCount--; card.querySelector('.zikr-count-display').innerText = currentCount;
-                        card.querySelector('.zikr-progress').style.width = `${((initialCount - currentCount) / initialCount) * 100}%`;
-                        card.style.transform = 'scale(0.98)'; setTimeout(() => card.style.transform = 'scale(1)', 100);
-                        if (currentCount === 0) { card.querySelector('.done-overlay').classList.remove('opacity-0'); if(window.navigator && window.navigator.vibrate) window.navigator.vibrate(50); }
-                    }
-                });
-            });
-            document.querySelectorAll('.copy-zikr-btn').forEach(btn => { btn.addEventListener('click', (e) => { e.stopPropagation(); navigator.clipboard.writeText(btn.getAttribute('data-text')).then(() => { StorageManager.showToast('تم نسخ الذكر بنجاح 📋'); }); }); });
-        } catch (error) { container.innerHTML = `<div class="alert alert-danger m-5">حدث خطأ في تحميل الأذكار.</div>`; }
-    });
-
-    // ----------------------------------------
-    // مسار الفئات والقوائم (Playlists)
-    // ----------------------------------------
-    const playlistsRouteHandler = async (container) => {
-        try {
-            let collections = []; let appPlaylists = [];
-            try { collections = await API.getCollections(); if(!Array.isArray(collections)) collections = []; } catch(e) {}
-            try { appPlaylists = await API.getPlaylists(); if(!Array.isArray(appPlaylists)) appPlaylists = []; } catch(e) {}
-            const userPlaylists = StorageManager.getPlaylists() || {};
-
-            let html = `
-                <section class="container py-4" data-aos="fade-in">
-                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 280px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80') center/cover;">
-                        <div class="text-center z-1 position-relative px-3"><div class="d-inline-flex p-3 rounded-circle mb-3 shadow" style="background: rgba(212, 175, 55, 0.2);"><i class="fa-solid fa-layer-group text-warning" style="font-size: 2.5rem;"></i></div><h1 class="fw-bold text-white font-cairo mb-2">القوائم والفئات الخاصة</h1></div>
-                    </div>
-                    <ul class="nav nav-pills justify-content-center mb-5 gap-2 custom-pills" id="playlistTabs" role="tablist">
-                        <li class="nav-item"><button class="nav-link active rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-collections"><i class="fa-solid fa-tags me-2"></i> المناسبات</button></li>
-                        <li class="nav-item"><button class="nav-link rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-app-playlists"><i class="fa-solid fa-star me-2"></i> مختارات المنصة</button></li>
-                        <li class="nav-item"><button class="nav-link rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-user-playlists"><i class="fa-solid fa-bookmark me-2"></i> قوائمي الخاصة</button></li>
-                    </ul>
-                    <style>.custom-pills .nav-link { color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border-color); } .custom-pills .nav-link.active { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }</style>
-                    <div class="tab-content" id="pills-tabContent">
-            `;
-
-            html += `<div class="tab-pane fade show active" id="tab-collections"><div class="row g-4">`;
-            if (collections.length > 0) {
-                collections.forEach(cat => { html += `<div class="col-lg-4 col-md-6" data-aos="fade-up"><div class="card bg-glass text-white border-0 shadow-sm text-center h-100 premium-card playlist-card overflow-hidden" onclick="window.location.hash='#/collection?id=${cat.id}'" style="cursor: pointer; border-bottom: 4px solid var(--accent-gold) !important; border-radius: 20px;"><div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('https://images.unsplash.com/photo-1574044943916-2581699f8c65?auto=format&fit=crop&w=800&q=80') center/cover; opacity: 0.15;"></div><div class="position-relative z-1 p-5 d-flex flex-column align-items-center justify-content-center h-100"><div class="p-3 rounded-circle mb-3" style="background: rgba(212, 175, 55, 0.15);"><i class="fa-solid ${cat.icon || 'fa-folder'} text-warning" style="font-size: 2.5rem;"></i></div><h4 class="fw-bold font-cairo mb-2">${cat.title}</h4></div></div></div>`; });
-            } else { html += `<div class="col-12 text-center text-muted-custom">لا توجد فئات حالياً</div>`; }
-            html += `</div></div>`;
-
-            html += `<div class="tab-pane fade" id="tab-app-playlists"><div class="row g-4">`;
-            if (appPlaylists.length > 0) {
-                appPlaylists.forEach(pl => { html += `<div class="col-lg-4 col-md-6"><div class="card bg-glass border-0 rounded-4 overflow-hidden h-100 shadow-sm premium-card" onclick="window.location.hash='#/playlist?id=${pl.id}'" style="cursor:pointer;"><img src="${pl.cover}" onerror="handleImageError(this, 'cover')" class="w-100 object-fit-cover" style="height: 180px;"><div class="p-3"><h5 class="fw-bold text-white mb-0 font-cairo">${pl.title}</h5></div></div></div>`; });
-            } else { html += `<div class="col-12 text-center text-muted-custom">لا توجد قوائم حالياً</div>`; }
-            html += `</div></div>`;
-
-            html += `<div class="tab-pane fade" id="tab-user-playlists"><div class="row g-4">`;
-            if (Object.keys(userPlaylists).length > 0) {
-                Object.keys(userPlaylists).forEach(key => { if(userPlaylists[key].items.length > 0) { html += `<div class="col-lg-4 col-md-6"><div class="card bg-glass border-0 rounded-4 p-4 h-100 shadow-sm premium-card" onclick="window.location.hash='#/user-playlist?id=${key}'" style="cursor:pointer; border-right: 4px solid var(--accent-gold) !important;"><h5 class="fw-bold text-white font-cairo">${userPlaylists[key].name}</h5><span class="badge bg-secondary text-dark rounded-pill">${userPlaylists[key].items.length} مقطع</span></div></div>`; } });
-            } else { html += `<div class="col-12 text-center text-muted-custom">لا توجد قوائم خاصة بك</div>`; }
-            html += `</div></div></div></section>`;
-            container.innerHTML = html;
         } catch(e) {}
-    };
-    Router.addRoute('#/playlists', playlistsRouteHandler);
-    Router.addRoute('#/categories', playlistsRouteHandler);
-
-    // ----------------------------------------
-    // مسار القرآن والقراء
-    // ----------------------------------------
+    });// --- 3. القرآن الكريم (تصميم زجاجي فاخر بصور إسلامية) ---
     Router.addRoute('#/quran', async (container) => {
         try {
-            let surahs = []; let reciters = [];
-            try { surahs = await API.getSurahs(); if(!Array.isArray(surahs)) surahs = []; } catch(e){}
-            try { reciters = await API.getReciters(); if(!Array.isArray(reciters)) reciters = []; } catch(e){}
-            
+            let surahs = []; try { surahs = await API.getSurahs(); } catch(e){}
             let quranHtml = `
                 <section class="container py-5" data-aos="fade-in">
-                    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
-                        <div><h2 class="fw-bold text-white mb-1">القرآن الكريم</h2></div>
-                        <div class="search-box glass-nav rounded-pill px-3 py-2 d-flex align-items-center w-100" style="max-width: 300px;"><i class="fa-solid fa-search text-muted-custom ms-2"></i><input type="text" id="surah-search" class="form-control bg-transparent border-0 text-white shadow-none" placeholder="بحث عن سورة..."></div>
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('${ISLAMIC_MOSQUE_IMG}') center/cover;">
+                        <div class="text-center z-1 position-relative px-3">
+                            <i class="fa-solid fa-book-quran text-warning mb-3" style="font-size: 3.5rem;"></i>
+                            <h1 class="fw-bold text-white font-cairo mb-2">المصحف الشامل</h1>
+                        </div>
                     </div>
-                    <div class="row g-4">`;
+                    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+                        <div class="search-box glass-nav rounded-pill px-3 py-2 d-flex align-items-center w-100" style="max-width: 400px; margin: auto; border: 1px solid var(--accent-gold);">
+                            <i class="fa-solid fa-search text-warning ms-3 fs-5"></i>
+                            <input type="text" id="surah-search" class="form-control bg-transparent border-0 text-white shadow-none fs-5 font-cairo" placeholder="ابحث عن سورة...">
+                        </div>
+                    </div>
+                    <div class="row g-4" id="surahs-list-container">`;
             surahs.forEach(s => quranHtml += buildSurahCard(s));
             quranHtml += `</div></section>`;
             container.innerHTML = quranHtml;
@@ -459,15 +235,64 @@ function setupRoutes() {
         } catch(e) {}
     });
 
+    // --- 4. البحث الشامل ---
+    Router.addRoute('#/search', async (container) => {
+        try {
+            let surahs = []; let reciters = [];
+            try { surahs = await API.getSurahs(); } catch(e){}
+            try { reciters = await API.getReciters(); } catch(e){}
+            container.innerHTML = `
+                <section class="container py-5" data-aos="fade-in">
+                    <div class="text-center mb-5">
+                        <h2 class="fw-bold text-white mb-3 font-cairo"><i class="fa-solid fa-search text-warning me-2"></i> البحث الشامل</h2>
+                        <div class="search-box bg-dark rounded-pill px-4 py-3 d-flex align-items-center mx-auto shadow-lg" style="max-width: 600px; border: 1px solid var(--accent-gold);">
+                            <i class="fa-solid fa-search text-warning fs-5 ms-3"></i>
+                            <input type="text" id="global-search-input" class="form-control bg-transparent border-0 text-white shadow-none fs-5 font-cairo" placeholder="ابحث عن اسم السورة أو القارئ..." autofocus>
+                        </div>
+                    </div>
+                    <div id="search-results-container" class="d-none">
+                        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fa-solid fa-book-open me-2 text-secondary"></i>النتائج في السور القرآنية</h4>
+                        <div class="row g-4 mb-5" id="surahs-results"></div>
+                        <h4 class="text-white fw-bold mb-4 border-bottom border-secondary pb-2"><i class="fa-solid fa-users me-2 text-secondary"></i>النتائج في القراء</h4>
+                        <div class="row g-4" id="reciters-results"></div>
+                    </div>
+                </section>
+            `;
+            const input = document.getElementById('global-search-input');
+            const resultsContainer = document.getElementById('search-results-container');
+            const surahsResults = document.getElementById('surahs-results');
+            const recitersResults = document.getElementById('reciters-results');
+
+            input.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                if (term === '') { resultsContainer.classList.add('d-none'); return; }
+                resultsContainer.classList.remove('d-none');
+                const filteredSurahs = surahs.filter(s => s.nameArabic.includes(term) || s.nameEnglish.toLowerCase().includes(term));
+                surahsResults.innerHTML = filteredSurahs.length > 0 ? filteredSurahs.map(s => buildSurahCard(s)).join('') : '<div class="col-12 text-muted-custom">لا توجد سور مطابقة.</div>';
+                const filteredReciters = reciters.filter(r => r.nameArabic.includes(term));
+                recitersResults.innerHTML = filteredReciters.length > 0 ? filteredReciters.map(r => buildReciterCard(r)).join('') : '<div class="col-12 text-muted-custom">لا يوجد قراء مطابقين.</div>';
+                attachCardEvents(surahs, null);
+            });
+        } catch (error) {}
+    });
+
+    // --- 5. القراء (جميع القراء بتصميم ملكي) ---
     Router.addRoute('#/readers', async (container) => {
         try {
-            let reciters = [];
-            try { reciters = await API.getReciters(); if(!Array.isArray(reciters)) reciters = []; } catch(e){}
+            let reciters = []; try { reciters = await API.getReciters(); } catch(e){}
             let readersHtml = `
                 <section class="container py-5" data-aos="fade-in">
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('${ISLAMIC_FALLBACK_IMG}') center/cover;">
+                        <div class="text-center z-1 position-relative px-3">
+                            <i class="fa-solid fa-microphone-lines text-warning mb-3" style="font-size: 3.5rem;"></i>
+                            <h1 class="fw-bold text-white font-cairo mb-2">أصوات من الجنة</h1>
+                        </div>
+                    </div>
                     <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
-                        <div><h2 class="fw-bold text-white mb-1">القراء</h2><p class="text-muted-custom mb-0">أكثر من 200 قارئ من جميع أنحاء العالم</p></div>
-                        <div class="search-box glass-nav rounded-pill px-3 py-2 d-flex align-items-center w-100" style="max-width: 300px;"><i class="fa-solid fa-search text-muted-custom ms-2"></i><input type="text" id="reader-search" class="form-control bg-transparent border-0 text-white shadow-none" placeholder="ابحث عن قارئ..."></div>
+                        <div class="search-box glass-nav rounded-pill px-3 py-2 d-flex align-items-center w-100" style="max-width: 400px; margin: auto; border: 1px solid var(--accent-gold);">
+                            <i class="fa-solid fa-search text-warning ms-3 fs-5"></i>
+                            <input type="text" id="reader-search" class="form-control bg-transparent border-0 text-white shadow-none fs-5 font-cairo" placeholder="ابحث عن قارئ...">
+                        </div>
                     </div>
                     <div class="row g-4">`;
             reciters.forEach(r => readersHtml += buildReciterCard(r));
@@ -484,168 +309,94 @@ function setupRoutes() {
         } catch(e) {}
     });
 
-    // ----------------------------------------
-    // مسار صفحة القارئ 🎙️
-    // ----------------------------------------
-    Router.addRoute('#/reader', async (container) => {
-        try {
-            const reciterId = localStorage.getItem('current_view_reciter');
-            if (!reciterId) { window.location.hash = '#/readers'; return; }
-
-            let reciters = await API.getReciters();
-            const reciter = reciters.find(r => String(r.id) === String(reciterId));
-            if (!reciter) { container.innerHTML = `<div class="alert alert-danger m-5">القارئ غير موجود.</div>`; return; }
-
-            localStorage.setItem('last_reciter_id', reciter.id);
-            let surahs = await API.getSurahs();
-            
-            let readerHtml = `
-                <section class="container py-5" data-aos="fade-in">
-                    <div class="card bg-glass border-0 rounded-4 p-4 p-md-5 mb-5 shadow-lg overflow-hidden position-relative">
-                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('${reciter.displayPhoto}') center/cover; opacity: 0.15; filter: blur(15px);"></div>
-                        <div class="row align-items-center position-relative z-1">
-                            <div class="col-md-3 text-center mb-4 mb-md-0">
-                                <img src="${reciter.displayPhoto}" onerror="handleImageError(this)" class="rounded-4 shadow-lg border border-warning" style="width: 200px; height: 200px; object-fit: cover; border-width: 3px !important;">
-                            </div>
-                            <div class="col-md-9 text-center text-md-end">
-                                <h1 class="fw-bold text-white mb-2 font-cairo text-shadow">${reciter.nameArabic}</h1>
-                                <p class="text-muted-custom fs-5 mb-3">${reciter.style}</p>
-                                <span class="badge bg-secondary text-dark rounded-pill px-4 py-2 fs-6"><i class="fa-solid fa-list-ol me-2"></i> ${surahs.length} سورة</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="fw-bold text-white mb-0">التلاوات</h4>
-                        <div class="search-box glass-nav rounded-pill px-3 py-2 d-flex align-items-center w-100" style="max-width: 300px;">
-                            <i class="fa-solid fa-search text-muted-custom ms-2"></i>
-                            <input type="text" id="reader-surah-search" class="form-control bg-transparent border-0 text-white shadow-none" placeholder="بحث عن سورة...">
-                        </div>
-                    </div>
-                    <div class="row g-4" id="reader-surahs-container">
-            `;
-            surahs.forEach(s => readerHtml += buildSurahCard(s));
-            readerHtml += `</div></section>`;
-            container.innerHTML = readerHtml;
-            
-            attachCardEvents(surahs, reciter);
-
-            document.getElementById('reader-surah-search').addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                container.querySelectorAll('.surah-item-card').forEach(card => {
-                    const name = card.getAttribute('data-name');
-                    card.style.display = name.includes(term) ? 'block' : 'none';
-                });
-            });
-
-        } catch (error) {
-            container.innerHTML = `<div class="alert alert-danger m-5">خطأ في تحميل صفحة القارئ.</div>`;
-        }
-    });
-
-    // ----------------------------------------
-    // مسار المكتبة المصرية
-    // ----------------------------------------
+    // --- 6. مكتبة العمالقة (تصميم أسطوري خاص) ---
     Router.addRoute('#/egyptian', async (container) => {
         try {
             let reciters = await API.getReciters();
-            if(!Array.isArray(reciters)) reciters = [];
             const egyptianReciters = reciters.filter(r => r.isEgyptianLibrary);
 
             let egyHtml = `
                 <section class="container py-5" data-aos="fade-in">
-                    <div class="card bg-glass border-0 rounded-4 p-5 mb-5 shadow-lg text-center" style="background: linear-gradient(45deg, rgba(22, 49, 38, 0.8), rgba(200, 167, 90, 0.2)); border: 1px solid var(--secondary-color) !important;">
-                        <i class="fa-solid fa-landmark text-secondary mb-3" style="font-size: 4rem;"></i>
-                        <h1 class="fw-bold text-white font-cairo mb-3">مكتبة العمالقة المصريين</h1>
-                        <p class="text-muted-custom fs-5 mb-0" style="max-width: 700px; margin: auto;">أرشيف حصري يضم أساطير التلاوة والمجود.</p>
+                    <div class="card bg-glass border-0 rounded-4 p-5 mb-5 shadow-lg text-center position-relative overflow-hidden" style="border: 2px solid var(--accent-gold) !important; box-shadow: 0 0 40px rgba(212,175,55,0.2) !important;">
+                        <div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('${ISLAMIC_MOSQUE_IMG}') center/cover; opacity: 0.1;"></div>
+                        <div class="position-relative z-1">
+                            <i class="fa-solid fa-crown text-warning mb-3" style="font-size: 5rem; filter: drop-shadow(0 0 10px rgba(212,175,55,0.8));"></i>
+                            <h1 class="fw-bold text-white font-cairo mb-3" style="letter-spacing: 2px;">مكتبة العمالقة المصريين</h1>
+                            <p class="text-muted-custom fs-5 mb-0" style="max-width: 700px; margin: auto;">أرشيف حصري يضم أساطير التلاوة وصناع المجد في العالم الإسلامي.</p>
+                        </div>
                     </div>
                     <div class="row g-4">
             `;
-            egyptianReciters.forEach(r => egyHtml += buildReciterCard(r));
+            egyptianReciters.forEach(r => egyHtml += buildGiantCard(r));
             egyHtml += `</div></section>`;
             container.innerHTML = egyHtml;
         } catch(e) {}
     });
 
-    // ----------------------------------------
-    // مسار الإحصائيات (User Dashboard)
-    // ----------------------------------------
-    Router.addRoute('#/dashboard', (container) => {
-        const history = StorageManager.getHistory() || [];
-        let totalListens = history.length;
-        let mostPlayedSurah = "غير متوفر";
-        let mostPlayedReciter = "غير متوفر";
-
-        if(totalListens > 0) {
-            const surahCounts = {}; const reciterCounts = {};
-            history.forEach(item => {
-                if(item.surah && item.surah.nameArabic) surahCounts[item.surah.nameArabic] = (surahCounts[item.surah.nameArabic] || 0) + 1;
-                if(item.reciter && item.reciter.nameArabic) reciterCounts[item.reciter.nameArabic] = (reciterCounts[item.reciter.nameArabic] || 0) + 1;
-            });
-            mostPlayedSurah = Object.keys(surahCounts).reduce((a, b) => surahCounts[a] > surahCounts[b] ? a : b);
-            mostPlayedReciter = Object.keys(reciterCounts).reduce((a, b) => reciterCounts[a] > reciterCounts[b] ? a : b);
-        }
-
-        container.innerHTML = `
-            <section class="container py-5" data-aos="fade-in">
-                <div class="text-center mb-5">
-                    <h2 class="fw-bold text-white mb-2"><i class="fa-solid fa-chart-pie text-warning me-2"></i> إحصائيات نشاطك</h2>
-                    <p class="text-muted-custom">تتبع تقدمك في استماع القرآن الكريم</p>
-                </div>
-                <div class="row g-4 mb-5">
-                    <div class="col-md-4"><div class="card bg-glass border-0 rounded-4 p-4 text-center shadow-lg"><i class="fa-solid fa-headphones text-secondary mb-3 fs-1"></i><h3 class="fw-bold text-white mb-1">${totalListens}</h3><p class="text-muted-custom mb-0">المقاطع المستمعة</p></div></div>
-                    <div class="col-md-4"><div class="card bg-glass border-0 rounded-4 p-4 text-center shadow-lg"><i class="fa-solid fa-book-quran text-secondary mb-3 fs-1"></i><h3 class="fw-bold text-white mb-1 font-cairo text-truncate">${mostPlayedSurah}</h3><p class="text-muted-custom mb-0">أكثر سورة استماعاً</p></div></div>
-                    <div class="col-md-4"><div class="card bg-glass border-0 rounded-4 p-4 text-center shadow-lg"><i class="fa-solid fa-microphone-lines text-secondary mb-3 fs-1"></i><h3 class="fw-bold text-white mb-1 font-cairo text-truncate">${mostPlayedReciter}</h3><p class="text-muted-custom mb-0">القارئ المفضل</p></div></div>
-                </div>
-                <div class="card bg-glass border-0 rounded-4 p-4 p-md-5 shadow-lg"><h4 class="fw-bold text-white mb-4 font-cairo">نشاطك الأخير</h4><canvas id="listeningChart" height="100"></canvas></div>
-            </section>
-        `;
-        setTimeout(() => {
-            const ctx = document.getElementById('listeningChart');
-            if(ctx && window.Chart) {
-                new Chart(ctx, { type: 'bar', data: { labels: ['اليوم', 'أمس', 'منذ يومين', 'منذ 3 أيام', 'منذ 4 أيام'], datasets: [{ label: 'عدد التلاوات', data: [totalListens > 5 ? 5 : totalListens, 3, 2, 4, 1], backgroundColor: 'rgba(212, 175, 55, 0.7)', borderColor: 'rgba(212, 175, 55, 1)', borderWidth: 1, borderRadius: 10 }] }, options: { scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#bbb' } }, x: { grid: { display: false }, ticks: { color: '#bbb' } } }, plugins: { legend: { labels: { color: '#fff' } } } } });
-            }
-        }, 300);
-    });
-
-    // ----------------------------------------
-    // مسار بوصلة القبلة الذكية (التصميم الفخم)
-    // ----------------------------------------
+    // --- 7. بوصلة القبلة (The Royal 3D Qibla) ---
     Router.addRoute('#/qibla', (container) => {
         container.innerHTML = `
             <section class="container py-5 text-center" data-aos="fade-in">
                 <div class="mb-5">
-                    <h2 class="fw-bold text-white mb-2"><i class="fa-solid fa-kaaba text-warning me-2"></i> اتجاه القبلة</h2>
-                    <p class="text-muted-custom">حدد اتجاه القبلة بدقة باستخدام مستشعرات هاتفك</p>
+                    <h2 class="fw-bold text-white mb-2 font-cairo" style="font-size: 3rem; text-shadow: 0 0 15px rgba(212,175,55,0.5);"><i class="fa-solid fa-kaaba text-warning me-3"></i> اتجاه القبلة</h2>
+                    <p class="text-muted-custom fs-5">مستشعرات ذكية لتحديد قبلتك أينما كنت</p>
                 </div>
-                <div class="card bg-glass border-0 rounded-4 p-4 p-md-5 mx-auto shadow-lg position-relative overflow-hidden" style="max-width: 450px; border: 1px solid rgba(212,175,55,0.2) !important;">
-                    <div id="qibla-compass-container" class="position-relative d-flex justify-content-center align-items-center mx-auto mb-4" style="width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(12,38,28,0.9) 0%, rgba(4,16,12,1) 100%); border: 6px solid rgba(212, 175, 55, 0.2); box-shadow: 0 0 40px rgba(212, 175, 55, 0.15), inset 0 0 30px rgba(0,0,0,0.8); transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);">
-                        <div class="position-absolute w-100 h-100 rounded-circle" style="border: 2px dashed rgba(212, 175, 55, 0.3); padding: 15px; transform: scale(0.9);"></div>
-                        <div id="compass-rose" class="position-absolute w-100 h-100 d-flex flex-column align-items-center justify-content-between py-3" style="transition: transform 0.2s ease-out; z-index: 5;">
-                            <span class="text-danger fw-bold fs-3 font-inter" style="text-shadow: 0 0 10px red;">N</span>
-                            <div class="d-flex w-100 justify-content-between px-3 position-absolute top-50 translate-middle-y"><span class="text-white fw-bold fs-5 font-inter opacity-50">W</span><span class="text-white fw-bold fs-5 font-inter opacity-50">E</span></div>
-                            <span class="text-white fw-bold fs-5 font-inter opacity-50">S</span>
+                <div class="card bg-glass border-0 rounded-4 p-4 p-md-5 mx-auto shadow-lg position-relative overflow-hidden" style="max-width: 500px; background: linear-gradient(145deg, #0c261c, #04100c); border: 2px solid rgba(212,175,55,0.3) !important;">
+                    
+                    <!-- إطار البوصلة الفخم -->
+                    <div id="qibla-compass-container" class="position-relative d-flex justify-content-center align-items-center mx-auto mb-5" style="width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(12,38,28,0.9) 0%, rgba(0,0,0,1) 100%); border: 8px solid rgba(212, 175, 55, 0.4); box-shadow: 0 0 50px rgba(212, 175, 55, 0.3), inset 0 0 40px rgba(0,0,0,0.9);">
+                        
+                        <!-- زخرفة داخلية -->
+                        <div class="position-absolute w-100 h-100 rounded-circle" style="border: 2px dashed rgba(212, 175, 55, 0.5); transform: scale(0.85);"></div>
+                        <div class="position-absolute w-100 h-100 rounded-circle" style="border: 1px solid rgba(212, 175, 55, 0.2); transform: scale(0.7);"></div>
+
+                        <!-- الاتجاهات الرئيسية (N, S, E, W) -->
+                        <div id="compass-rose" class="position-absolute w-100 h-100 d-flex flex-column align-items-center justify-content-between py-2" style="transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 5;">
+                            <span class="text-danger fw-bold fs-2 font-inter" style="text-shadow: 0 0 15px red;">N</span>
+                            <div class="d-flex w-100 justify-content-between px-3 position-absolute top-50 translate-middle-y">
+                                <span class="text-warning fw-bold fs-4 font-inter opacity-75">W</span>
+                                <span class="text-warning fw-bold fs-4 font-inter opacity-75">E</span>
+                            </div>
+                            <span class="text-warning fw-bold fs-4 font-inter opacity-75">S</span>
                         </div>
-                        <div id="qibla-arrow" class="position-absolute d-flex flex-column align-items-center justify-content-start" style="width: 100%; height: 100%; transition: transform 0.2s ease-out; z-index: 10;">
-                            <div class="d-flex flex-column align-items-center" style="transform: translateY(-20px);">
-                                <div class="bg-dark rounded p-2 shadow-lg mb-1 d-flex align-items-center justify-content-center" style="border: 2px solid var(--accent-gold); width: 60px; height: 60px;"><i class="fa-solid fa-kaaba" style="font-size: 2.5rem; color: var(--accent-gold);"></i></div>
-                                <i class="fa-solid fa-caret-down" style="font-size: 2rem; color: var(--accent-gold); text-shadow: 0 5px 10px rgba(0,0,0,0.5); transform: translateY(-10px);"></i>
+
+                        <!-- سهم القبلة الملكي -->
+                        <div id="qibla-arrow" class="position-absolute d-flex flex-column align-items-center justify-content-start" style="width: 100%; height: 100%; transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); z-index: 10;">
+                            <div class="d-flex flex-column align-items-center" style="transform: translateY(-30px);">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center mb-1" style="width: 80px; height: 80px; background: linear-gradient(135deg, #d4af37, #8A6D1C); box-shadow: 0 10px 20px rgba(0,0,0,0.8), inset 0 0 10px rgba(255,255,255,0.5); border: 3px solid #000;">
+                                    <i class="fa-solid fa-kaaba text-dark" style="font-size: 3rem;"></i>
+                                </div>
+                                <i class="fa-solid fa-caret-down" style="font-size: 3rem; color: var(--accent-gold); filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8)); transform: translateY(-15px);"></i>
                             </div>
                         </div>
-                        <div class="rounded-circle position-relative" style="width: 16px; height: 16px; background: var(--accent-gold); box-shadow: 0 0 15px rgba(212,175,55,1); z-index: 11; border: 3px solid #111;"></div>
+
+                        <!-- نقطة المركز -->
+                        <div class="rounded-circle position-relative" style="width: 24px; height: 24px; background: radial-gradient(circle, #fff, #d4af37); box-shadow: 0 0 20px rgba(212,175,55,1); z-index: 11; border: 4px solid #000;"></div>
                     </div>
-                    <div id="qibla-status" class="mt-3 mb-4 text-white font-cairo fs-5">جاري التحقق من المستشعرات...</div>
-                    <button class="btn btn-primary-custom rounded-pill w-100 py-3 fw-bold fs-5 shadow-lg" id="start-compass-btn"><i class="fa-solid fa-location-crosshairs me-2"></i> تحديد القبلة الآن</button>
+
+                    <div id="qibla-status" class="mt-4 mb-4 p-3 rounded-3 text-white font-cairo fs-5 fw-bold" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);">
+                        يرجى تفعيل الـ GPS لبدء التحديد
+                    </div>
+                    
+                    <button class="btn btn-primary-custom rounded-pill w-100 py-3 fw-bold fs-4 shadow-lg" id="start-compass-btn">
+                        <i class="fa-solid fa-satellite-dish me-2"></i> ربط بالأقمار الصناعية
+                    </button>
                 </div>
             </section>
         `;
-        const btn = document.getElementById('start-compass-btn'); const status = document.getElementById('qibla-status'); const compassRose = document.getElementById('compass-rose'); const qiblaArrow = document.getElementById('qibla-arrow');
+
+        const btn = document.getElementById('start-compass-btn'); 
+        const status = document.getElementById('qibla-status'); 
+        const compassRose = document.getElementById('compass-rose'); 
+        const qiblaArrow = document.getElementById('qibla-arrow');
+
         btn.addEventListener('click', () => {
-            status.innerText = "جاري الاتصال بالأقمار الصناعية...";
+            status.innerHTML = `<span class="text-warning"><i class="fa-solid fa-spinner fa-spin me-2"></i> جاري الاتصال...</span>`;
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(permissionState => { if (permissionState === 'granted') getLocation(); else status.innerText = "تم رفض إذن البوصلة."; }).catch(console.error);
+                DeviceOrientationEvent.requestPermission().then(p => { if (p === 'granted') getLocation(); else status.innerHTML = "<span class='text-danger'>تم رفض إذن البوصلة.</span>"; }).catch(console.error);
             } else { getLocation(); }
         });
+
         function getLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
@@ -653,20 +404,404 @@ function setupRoutes() {
                     const MECCA_LAT = 21.422487 * Math.PI / 180.0; const MECCA_LNG = 39.826206 * Math.PI / 180.0;
                     let qiblaHeading = Math.atan2(Math.sin(MECCA_LNG - lng), Math.cos(lat) * Math.tan(MECCA_LAT) - Math.sin(lat) * Math.cos(MECCA_LNG - lng));
                     qiblaHeading = (qiblaHeading * 180.0 / Math.PI + 360) % 360;
-                    status.innerHTML = `<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i> تمت المطابقة! ضع الموبايل مسطحاً ولفه مع الكعبة.</span>`;
-                    window.addEventListener("deviceorientationabsolute", (event) => handleOrientation(event, qiblaHeading), true); window.addEventListener("deviceorientation", (event) => handleOrientation(event, qiblaHeading), true);
-                }, () => { status.innerHTML = `<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> يرجى تشغيل الـ GPS (الموقع)</span>`; });
+                    status.innerHTML = `<span class="text-success"><i class="fa-solid fa-check-circle me-2 fs-4"></i> تمت المطابقة! ضع الهاتف بشكل مسطح.</span>`;
+                    
+                    window.addEventListener("deviceorientationabsolute", (event) => handleOrientation(event, qiblaHeading), true); 
+                    window.addEventListener("deviceorientation", (event) => handleOrientation(event, qiblaHeading), true);
+                }, () => { status.innerHTML = `<span class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i> يرجى تشغيل الـ GPS (الموقع)</span>`; });
             }
         }
+
         function handleOrientation(event, qiblaAngle) {
             let compass = event.webkitCompassHeading || Math.abs(event.alpha - 360);
-            if (compass) { compassRose.style.transform = `rotate(${-compass}deg)`; qiblaArrow.style.transform = `rotate(${qiblaAngle - compass}deg)`; }
+            if (compass) { 
+                compassRose.style.transform = `rotate(${-compass}deg)`; 
+                qiblaArrow.style.transform = `rotate(${qiblaAngle - compass}deg)`; 
+            }
         }
     });
 
-    // ----------------------------------------
-    // مسار الإعدادات (Settings)
-    // ----------------------------------------
+    // --- 8. مواقيت الصلاة (تحديد تلقائي + 12 ساعة) ---
+    Router.addRoute('#/prayer', async (container) => {
+        container.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-warning" role="status"></div><h4 class="text-white mt-3 font-cairo">جاري تحديد الموقع وحساب المواقيت...</h4></div>`;
+        
+        const renderPrayerTimes = (timings, locationText) => {
+            const prayers = [
+                { id: 'Fajr', name: 'الفجر', icon: 'fa-cloud-moon', time: timings.Fajr },
+                { id: 'Sunrise', name: 'الشروق', icon: 'fa-sun', time: timings.Sunrise },
+                { id: 'Dhuhr', name: 'الظهر', icon: 'fa-sun', time: timings.Dhuhr },
+                { id: 'Asr', name: 'العصر', icon: 'fa-cloud-sun', time: timings.Asr },
+                { id: 'Maghrib', name: 'المغرب', icon: 'fa-moon', time: timings.Maghrib },
+                { id: 'Isha', name: 'العشاء', icon: 'fa-star-and-crescent', time: timings.Isha }
+            ];
+
+            let html = `
+                <section class="container py-5" data-aos="fade-in">
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 300px; background: linear-gradient(to top, rgba(7,26,19,1), rgba(212,175,55,0.1)), url('${ISLAMIC_MOSQUE_IMG}') center/cover;">
+                        <div class="text-center z-1 position-relative px-3">
+                            <h2 class="fw-bold text-warning mb-2 font-cairo" style="text-shadow: 0 4px 10px rgba(0,0,0,0.8);">مواقيت الصلاة</h2>
+                            <p class="text-light fs-5 mb-4 font-inter"><i class="fa-solid fa-location-dot me-1"></i> ${locationText}</p>
+                            <div class="bg-dark rounded-pill px-5 py-3 border border-warning shadow-lg">
+                                <h5 class="text-muted-custom mb-1 fs-6">الوقت المتبقي للصلاة القادمة</h5>
+                                <h1 class="fw-bold text-white mb-0 font-inter" id="prayer-countdown" style="letter-spacing: 2px;">--:--:--</h1>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 justify-content-center">
+            `;
+            prayers.forEach(p => {
+                html += `
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card bg-glass border-0 text-center p-4 h-100 premium-card shadow-sm prayer-card" style="border-top: 3px solid rgba(255,255,255,0.1) !important; border-radius: 20px;">
+                            <i class="fa-solid ${p.icon} mb-3" style="font-size: 2.5rem; color: var(--text-secondary);"></i>
+                            <h4 class="fw-bold text-white mb-2 font-cairo">${p.name}</h4>
+                            <h5 class="text-warning mb-0 font-inter fw-bold">${formatAMPM(p.time)}</h5>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></section>`;
+            container.innerHTML = html;
+
+            const updateCountdown = () => {
+                const now = new Date();
+                const currentTime = now.getHours() * 60 + now.getMinutes();
+                let nextPrayerTime = null;
+                for (let p of prayers) {
+                    const [hours, mins] = p.time.split(':').map(Number);
+                    if ((hours * 60 + mins) > currentTime) { nextPrayerTime = (hours * 60 + mins); break; }
+                }
+                if (!nextPrayerTime) {
+                    const [fHours, fMins] = prayers[0].time.split(':').map(Number);
+                    nextPrayerTime = (fHours + 24) * 60 + fMins;
+                }
+                const diffMins = nextPrayerTime - currentTime;
+                const hrs = Math.floor(diffMins / 60); const mns = diffMins % 60; const secs = 59 - now.getSeconds();
+                const displayEl = document.getElementById('prayer-countdown');
+                if (displayEl) displayEl.innerText = `${hrs.toString().padStart(2, '0')}:${mns.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+            setInterval(updateCountdown, 1000); updateCountdown();
+        };
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    try {
+                        const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&method=5`);
+                        const data = await res.json();
+                        renderPrayerTimes(data.data.timings, "تم التحديد عبر GPS 📍");
+                    } catch (e) {
+                        const fallback = await API.getPrayerTimes("Hurghada", "Egypt");
+                        renderPrayerTimes(fallback, "افتراضي (خطأ اتصال)");
+                    }
+                },
+                async () => {
+                    const fallback = await API.getPrayerTimes("Hurghada", "Egypt");
+                    renderPrayerTimes(fallback, "التحديد التلقائي غير مفعل");
+                }
+            );
+        } else {
+            const fallback = await API.getPrayerTimes("Hurghada", "Egypt");
+            renderPrayerTimes(fallback, "متصفحك لا يدعم الموقع");
+        }
+    });// --- 9. التفسير (معزز بنظام الخوادم الاحتياطية) ---
+    Router.addRoute('#/tafsir', async (container) => {
+        const surahsList = ["الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس","هود","يوسف","الرعد","إبراهيم","الحجر","النحل","الإسراء","الكهف","مريم","طه","الأنبياء","الحج","المؤمنون","النور","الفرقان","الشعراء","النمل","القصص","العنكبوت","الروم","لقمان","السجدة","الأحزاب","سبأ","فاطر","يس","الصافات","ص","الزمر","غافر","فصلت","الشورى","الزخرف","الدخان","الجاثية","الأحقاف","محمد","الفتح","الحجرات","ق","الذاريات","الطور","النجم","القمر","الرحمن","الواقعة","الحديد","المجادلة","الحشر","الممتحنة","الصف","الجمعة","المنافقون","التغابن","الطلاق","التحريم","الملك","القلم","الحاقة","المعارج","نوح","الجن","المزمل","المدثر","القيامة","الإنسان","المرسلات","النبأ","النازعات","عبس","التكوير","الانفطار","المطففين","الانشقاق","البروج","الطارق","الأعلى","الغاشية","الفجر","البلد","الشمس","الليل","الضحى","الشرح","التين","العلق","القدر","البينة","الزلزلة","العاديات","القارعة","التكاثر","العصر","الهمزة","الفيل","قريش","الماعون","الكوثر","الكافرون","النصر","المسد","الإخلاص","الفلق","الناس"];
+        let optionsHtml = '<option value="" disabled selected>-- اختر سورة لعرض التفسير --</option>';
+        surahsList.forEach((name, index) => { optionsHtml += `<option value="${index + 1}" style="color: #000;">${index + 1}. سورة ${name}</option>`; });
+
+        let tafsirHtml = `
+            <section class="container py-5" data-aos="fade-in">
+                <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.2)), url('${ISLAMIC_MOSQUE_IMG}') center/cover;">
+                    <div class="text-center z-1 position-relative px-3">
+                        <i class="fa-solid fa-book-open-reader text-warning mb-3" style="font-size: 3.5rem;"></i>
+                        <h2 class="fw-bold text-white font-cairo mb-2">موسوعة التفسير المعتمد</h2>
+                    </div>
+                </div>
+                <div class="row justify-content-center mb-5"><div class="col-lg-8"><select id="surahSelect" class="form-select bg-dark text-white border-warning fs-5 py-3 font-cairo shadow-lg">${optionsHtml}</select></div></div>
+                <div id="tafsirContentArea" class="d-none">
+                    <ul class="nav nav-pills justify-content-center mb-4 gap-2 custom-pills" id="tafsirTabs">
+                        <li class="nav-item"><button class="nav-link active rounded-pill px-4 py-2 fw-bold" data-book="ar.muyassar">التفسير الميسر</button></li>
+                        <li class="nav-item"><button class="nav-link rounded-pill px-4 py-2 fw-bold" data-book="ar.jalalayn">تفسير الجلالين</button></li>
+                    </ul>
+                    <div class="card bg-glass text-white border-0 shadow-lg p-4 p-md-5 rounded-4" style="border-top: 4px solid var(--accent-gold) !important;">
+                        <h3 class="fw-bold text-warning font-cairo text-center mb-4" id="tafsirTitle"></h3>
+                        <div id="tafsirLoader" class="text-center py-5 d-none"><div class="spinner-border text-warning mb-3"></div><p>جاري جلب الآيات والتفسير...</p></div>
+                        <div id="tafsirText" class="px-md-4 py-3" style="font-family: 'Amiri', serif; font-size: 1.5rem; line-height: 2.3 !important;"></div>
+                    </div>
+                </div>
+            </section>
+        `;
+        container.innerHTML = tafsirHtml;
+
+        let currentSurahId = null; let currentBook = 'ar.muyassar'; 
+        const fetchTafsir = async () => {
+            if(!currentSurahId) return;
+            document.getElementById('tafsirText').innerHTML = ''; 
+            document.getElementById('tafsirLoader').classList.remove('d-none');
+            try {
+                const response = await fetch(`https://api.alquran.cloud/v1/sura/${currentSurahId}/${currentBook}`);
+                const data = await response.json(); 
+                if (data.code !== 200) throw new Error("API Failed");
+                
+                let htmlContent = '';
+                data.data.ayahs.forEach(ayah => {
+                    htmlContent += `<div class="mb-4 pb-3 border-bottom border-secondary"><span class="badge bg-warning text-dark mb-2">الآية ${ayah.numberInSurah}</span><p class="text-white m-0 lh-lg">${ayah.text}</p></div>`;
+                });
+                document.getElementById('tafsirText').innerHTML = htmlContent;
+            } catch (error) { 
+                 try {
+                    const backupResponse = await fetch(`https://quranenc.com/api/v1/translation/sura/arabic_moyassar/${currentSurahId}`);
+                    const backupData = await backupResponse.json();
+                    let htmlContent = '';
+                    if(backupData.result && backupData.result.length > 0) {
+                        backupData.result.forEach(ayah => {
+                            htmlContent += `<div class="mb-4 pb-3 border-bottom border-secondary"><span class="badge bg-warning text-dark mb-2">الآية ${ayah.aya}</span><p class="text-white m-0 lh-lg">${ayah.translation}</p></div>`;
+                        });
+                        document.getElementById('tafsirText').innerHTML = htmlContent;
+                    } else { throw new Error(); }
+                 } catch(e) {
+                     document.getElementById('tafsirText').innerHTML = `<p class="text-danger text-center">عذراً، حدث خطأ في الاتصال بالخوادم. تحقق من الإنترنت.</p>`; 
+                 }
+            } finally { 
+                document.getElementById('tafsirLoader').classList.add('d-none'); 
+            }
+        };
+
+        document.getElementById('surahSelect').addEventListener('change', (e) => { 
+            currentSurahId = e.target.value; 
+            document.getElementById('tafsirContentArea').classList.remove('d-none'); 
+            document.getElementById('tafsirTitle').textContent = `تفسير سورة ${surahsList[currentSurahId - 1]}`; 
+            fetchTafsir(); 
+        });
+        document.querySelectorAll('#tafsirTabs .nav-link').forEach(tab => { 
+            tab.addEventListener('click', (e) => { 
+                document.querySelectorAll('#tafsirTabs .nav-link').forEach(t => t.classList.remove('active')); 
+                tab.classList.add('active'); 
+                currentBook = e.target.getAttribute('data-book'); 
+                fetchTafsir(); 
+            }); 
+        });
+    });
+
+    // --- 10. القوائم والفئات الخاصة (مليئة بالكامل ببيانات حقيقية وقائمة زين محمد سليم السكري) ---
+    const playlistsRouteHandler = async (container) => {
+        try {
+            let collections = await API.getCollections();
+            let appPlaylists = await API.getPlaylists();
+            let surahs = await API.getSurahs();
+
+            let html = `
+                <section class="container py-5" data-aos="fade-in">
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 280px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('${ISLAMIC_FALLBACK_IMG}') center/cover;">
+                        <div class="text-center z-1 position-relative px-3">
+                            <i class="fa-solid fa-layer-group text-warning mb-3" style="font-size: 3.5rem;"></i>
+                            <h1 class="fw-bold text-white font-cairo mb-2">القوائم والفئات الخاصة</h1>
+                            <p class="text-muted-custom">مختارات قرآنية مميزة وقوائم تشغيل مخصصة</p>
+                        </div>
+                    </div>
+                    <ul class="nav nav-pills justify-content-center mb-5 gap-2 custom-pills" id="playlistTabs" role="tablist">
+                        <li class="nav-item"><button class="nav-link active rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-collections"><i class="fa-solid fa-tags me-2"></i> المناسبات</button></li>
+                        <li class="nav-item"><button class="nav-link rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-app-playlists"><i class="fa-solid fa-star me-2"></i> مختارات القوائم</button></li>
+                    </ul>
+                    <div class="tab-content" id="pills-tabContent">
+            `;
+
+            // تبويب المناسبات
+            html += `<div class="tab-pane fade show active" id="tab-collections"><div class="row g-4">`;
+            collections.forEach(cat => {
+                html += `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card bg-glass text-white border-0 shadow-lg text-center p-4 h-100 premium-card overflow-hidden" style="border-radius: 20px; border-bottom: 4px solid var(--accent-gold) !important;">
+                            <div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('${cat.image || ISLAMIC_MOSQUE_IMG}') center/cover; opacity: 0.15;"></div>
+                            <div class="position-relative z-1 p-3">
+                                <div class="p-3 rounded-circle d-inline-block mb-3" style="background: rgba(212, 175, 55, 0.15);"><i class="fa-solid ${cat.icon || 'fa-folder'} text-warning fs-1"></i></div>
+                                <h4 class="fw-bold font-cairo mb-3">${cat.title}</h4>
+                                <p class="text-muted-custom small">مختارة بعناية لتجربة استماع هادئة</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+
+            // تبويب القوائم المختارة (تتضمن زين محمد سليم السكري)
+            html += `<div class="tab-pane fade" id="tab-app-playlists"><div class="row g-4">`;
+            appPlaylists.forEach(pl => {
+                html += `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card bg-glass border-0 rounded-4 overflow-hidden h-100 shadow-lg premium-card">
+                            <div class="position-relative" style="height: 180px;">
+                                <img src="${pl.cover}" onerror="handleImageError(this)" class="w-100 h-100 object-fit-cover">
+                                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));"></div>
+                            </div>
+                            <div class="p-4 d-flex flex-column h-100">
+                                <h4 class="fw-bold text-white mb-3 font-cairo">${pl.title}</h4>
+                                <div class="mt-auto">
+                                    <button class="btn btn-outline-custom w-100 rounded-pill fw-bold play-playlist-btn" data-surahs='${JSON.stringify(pl.surahs || [1, 2, 3])}'><i class="fa-solid fa-play me-2"></i> تشغيل القائمة</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div></div></div></section>`;
+            container.innerHTML = html;
+
+            // تفعيل زر تشغيل القوائم
+            container.querySelectorAll('.play-playlist-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const surahIds = JSON.parse(btn.getAttribute('data-surahs'));
+                    const reciters = await API.getReciters();
+                    const targetSurah = surahs.find(s => s.id === surahIds[0]) || surahs[0];
+                    const playerToUse = window.globalPlayer || globalPlayer;
+                    playerToUse.playTrack(targetSurah, reciters[0]);
+                    showPlayerUI();
+                });
+            });
+
+        } catch(e) {}
+    };
+    Router.addRoute('#/playlists', playlistsRouteHandler);
+    Router.addRoute('#/categories', playlistsRouteHandler);
+
+    // --- 11. حصن المسلم (الأذكار التفاعلية بالكامل) ---
+    Router.addRoute('#/azkar', async (container) => {
+        try {
+            const azkarData = await API.getAzkar();
+            let azkarHtml = `
+                <section class="container py-5" data-aos="fade-in">
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 250px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('${ISLAMIC_MOSQUE_IMG}') center/cover;">
+                        <div class="text-center z-1 position-relative px-3">
+                            <i class="fa-solid fa-hands-praying text-warning mb-3" style="font-size: 3.5rem;"></i>
+                            <h1 class="fw-bold text-white font-cairo mb-2">حصن المسلم (الأذكار اليومية)</h1>
+                        </div>
+                    </div>
+                    <ul class="nav nav-pills justify-content-center mb-5 gap-2 custom-pills" id="azkarTabs" role="tablist">
+            `;
+            
+            azkarData.forEach((category, index) => {
+                const isFirst = index === 0;
+                azkarHtml += `<li class="nav-item" role="presentation"><button class="nav-link ${isFirst ? 'active' : ''} rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#azkar-cat-${index}" type="button"><i class="fa-solid ${category.icon || 'fa-star'} me-2"></i> ${category.title}</button></li>`;
+            });
+            azkarHtml += `</ul><div class="tab-content" id="azkarTabContent">`;
+
+            azkarData.forEach((category, index) => {
+                const isFirst = index === 0;
+                azkarHtml += `<div class="tab-pane fade ${isFirst ? 'show active' : ''}" id="azkar-cat-${index}"><div class="row g-4 justify-content-center">`;
+                
+                category.items.forEach((item, itemIdx) => {
+                    const count = item.count || 1;
+                    azkarHtml += `
+                        <div class="col-lg-8" data-aos="fade-up" data-aos-delay="${itemIdx * 50}">
+                            <div class="card bg-glass text-white border-0 shadow-lg p-0 rounded-4 premium-card zikr-interactive-card" data-count="${count}" style="cursor: pointer; border-right: 5px solid var(--accent-gold) !important; overflow: hidden; position: relative;">
+                                <div class="zikr-progress position-absolute top-0 end-0 h-100" style="width: 0%; background: rgba(212, 175, 55, 0.15); transition: width 0.3s ease; z-index: 0;"></div>
+                                <div class="p-4 p-md-5 position-relative z-1 text-center">
+                                    <p class="fs-4 lh-lg mb-4 font-cairo" style="font-family: 'Amiri', serif !important;">${item.text}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-secondary">
+                                        <button class="btn btn-glass btn-sm rounded-circle copy-zikr-btn" data-text="${item.text}"><i class="fa-solid fa-copy text-secondary"></i></button>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="text-muted-custom small">اضغط للتسبيح</span>
+                                            <div class="bg-dark rounded-pill px-4 py-2 border border-warning shadow d-flex align-items-center gap-2"><i class="fa-solid fa-arrows-rotate text-warning"></i><span class="fw-bold fs-5 zikr-count-display">${count}</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                azkarHtml += `</div></div>`;
+            });
+
+            azkarHtml += `</div></section>`;
+            container.innerHTML = azkarHtml;
+
+            document.querySelectorAll('.zikr-interactive-card').forEach(card => {
+                let initialCount = parseInt(card.getAttribute('data-count'));
+                let currentCount = initialCount;
+                const countDisplay = card.querySelector('.zikr-count-display');
+                const progressBar = card.querySelector('.zikr-progress');
+                
+                card.addEventListener('click', (e) => {
+                    if(e.target.closest('.copy-zikr-btn')) return;
+                    if (currentCount > 0) {
+                        currentCount--; countDisplay.innerText = currentCount;
+                        let percent = ((initialCount - currentCount) / initialCount) * 100;
+                        progressBar.style.width = `${percent}%`;
+                        if(window.navigator && window.navigator.vibrate) window.navigator.vibrate(40);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.copy-zikr-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(btn.getAttribute('data-text'));
+                });
+            });
+        } catch (error) {}
+    });
+
+    // --- 12. صفحة القارئ الفردية ---
+    Router.addRoute('#/reader', async (container) => {
+        try {
+            const reciterId = localStorage.getItem('current_view_reciter');
+            if (!reciterId) { window.location.hash = '#/readers'; return; }
+            let reciters = await API.getReciters();
+            const reciter = reciters.find(r => String(r.id) === String(reciterId));
+            if (!reciter) { window.location.hash = '#/readers'; return; }
+
+            localStorage.setItem('last_reciter_id', reciter.id);
+            let surahs = await API.getSurahs();
+            
+            let readerHtml = `
+                <section class="container py-5" data-aos="fade-in">
+                    <div class="card bg-glass border-0 rounded-4 p-4 p-md-5 mb-5 shadow-lg overflow-hidden position-relative" style="border: 1px solid var(--accent-gold) !important;">
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('${reciter.displayPhoto}') center/cover; opacity: 0.15; filter: blur(15px);"></div>
+                        <div class="row align-items-center position-relative z-1">
+                            <div class="col-md-3 text-center mb-4 mb-md-0"><img src="${reciter.displayPhoto}" class="rounded-circle shadow-lg border border-warning" style="width: 160px; height: 160px; object-fit: cover; border-width: 3px !important;"></div>
+                            <div class="col-md-9 text-center text-md-end"><h1 class="fw-bold text-white mb-2 font-cairo">${reciter.nameArabic}</h1><p class="text-muted-custom fs-5 mb-0">${reciter.style}</p></div>
+                        </div>
+                    </div>
+                    <div class="row g-4">
+            `;
+            surahs.forEach(s => readerHtml += buildSurahCard(s));
+            readerHtml += `</div></section>`;
+            container.innerHTML = readerHtml;
+            attachCardEvents(surahs, reciter);
+        } catch (error) {}
+    });
+
+    // --- 13. الإحصائيات (Dashboard) ---
+    Router.addRoute('#/dashboard', (container) => {
+        const history = StorageManager.getHistory() || [];
+        let totalListens = history.length;
+        let mostPlayedSurah = "لا يوجد بيانات بعد";
+        let mostPlayedReciter = "لا يوجد بيانات بعد";
+
+        if(totalListens > 0) {
+            const surahCounts = {}; const reciterCounts = {};
+            history.forEach(item => {
+                if(item.surah && item.surah.nameArabic) surahCounts[item.surah.nameArabic] = (surahCounts[item.surah.nameArabic] || 0) + 1;
+                if(item.reciter && item.reciter.nameArabic) reciterCounts[item.reciter.nameArabic] = (reciterCounts[item.reciter.nameArabic] || 0) + 1;
+            });
+            if (Object.keys(surahCounts).length > 0) mostPlayedSurah = Object.keys(surahCounts).reduce((a, b) => surahCounts[a] > surahCounts[b] ? a : b);
+            if (Object.keys(reciterCounts).length > 0) mostPlayedReciter = Object.keys(reciterCounts).reduce((a, b) => reciterCounts[a] > reciterCounts[b] ? a : b);
+        }
+
+        container.innerHTML = `
+            <section class="container py-5" data-aos="fade-in">
+                <div class="text-center mb-5"><h2 class="fw-bold text-white mb-2"><i class="fa-solid fa-chart-pie text-warning me-2"></i> إحصائيات نشاطك</h2></div>
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4"><div class="card bg-glass border-0 rounded-4 p-4 text-center shadow-lg"><i class="fa-solid fa-headphones text-secondary mb-3 fs-1"></i><h3 class="fw-bold text-white mb-1">${totalListens}</h3><p class="text-muted-custom mb-0">المقاطع المستمعة</p></div></div>
+                    <div class="col-md-4"><div class="card bg-glass border-0 rounded-4 p-4 text-center shadow-lg"><i class="fa-solid fa-book-quran text-secondary mb-3 fs-1"></i><h3 class="fw-bold text-white mb-1 font-cairo text-truncate">${mostPlayedSurah}</h3><p class="text-muted-custom mb-0">أكثر سورة استماعاً</p></div></div>
+                    <div class="col-md-4"><div class="card bg-glass border-0 rounded-4 p-4 text-center shadow-lg"><i class="fa-solid fa-microphone-lines text-secondary mb-3 fs-1"></i><h3 class="fw-bold text-white mb-1 font-cairo text-truncate">${mostPlayedReciter}</h3><p class="text-muted-custom mb-0">القارئ المفضل</p></div></div>
+                </div>
+            </section>
+        `;
+    });
+
+    // --- 14. الإعدادات ---
     Router.addRoute('#/settings', (container) => {
         const currentTheme = SettingsManager.getSetting('theme');
         const autoPlay = SettingsManager.getSetting('autoPlayNext');
@@ -674,16 +809,12 @@ function setupRoutes() {
             <section class="container py-5" data-aos="fade-in" style="max-width: 800px;">
                 <h2 class="fw-bold text-white mb-4">الإعدادات</h2>
                 <div class="card bg-glass border-0 rounded-4 p-4 mb-4 shadow-sm">
-                    <h5 class="text-secondary fw-bold mb-4"><i class="fa-solid fa-palette me-2"></i> المظهر والتصميم</h5>
-                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom border-secondary pb-3" style="border-color: rgba(255,255,255,0.1) !important;">
-                        <div><h6 class="text-white mb-1">الوضع الليلي</h6><small class="text-muted-custom">تفعيل المظهر الداكن</small></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div><h6 class="text-white mb-1">الوضع الليلي</h6></div>
                         <div class="form-check form-switch fs-4"><input class="form-check-input shadow-none" type="checkbox" id="themeSwitch" ${currentTheme === 'dark' ? 'checked' : ''}></div>
                     </div>
-                </div>
-                <div class="card bg-glass border-0 rounded-4 p-4 mb-4 shadow-sm">
-                    <h5 class="text-secondary fw-bold mb-4"><i class="fa-solid fa-circle-play me-2"></i> خيارات التشغيل</h5>
-                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3" style="border-color: rgba(255,255,255,0.1) !important;">
-                        <div><h6 class="text-white mb-1">التشغيل التلقائي</h6><small class="text-muted-custom">تشغيل السورة التالية تلقائياً</small></div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div><h6 class="text-white mb-1">التشغيل التلقائي</h6></div>
                         <div class="form-check form-switch fs-4"><input class="form-check-input shadow-none" type="checkbox" id="autoPlaySwitch" ${autoPlay ? 'checked' : ''}></div>
                     </div>
                 </div>
@@ -692,10 +823,11 @@ function setupRoutes() {
         document.getElementById('themeSwitch').addEventListener('change', (e) => SettingsManager.saveSetting('theme', e.target.checked ? 'dark' : 'light'));
         document.getElementById('autoPlaySwitch').addEventListener('change', (e) => SettingsManager.saveSetting('autoPlayNext', e.target.checked));
     });
-}
+
+} // =================== نهاية دالة setupRoutes =================== //
 
 // ==========================================
-// 4. دوال بناء الواجهات (UI Builders)
+// 3. دوال بناء الواجهات (UI Builders) بصور إسلامية مضمونة 100%
 // ==========================================
 
 function buildSurahCard(surah) {
@@ -703,18 +835,16 @@ function buildSurahCard(surah) {
     const heartClass = isFav ? 'fa-solid text-danger' : 'fa-regular text-muted-custom';
     return `
         <div class="col-lg-4 col-md-6 surah-item-card" data-name="${surah.nameArabic} ${surah.nameEnglish}">
-            <div class="card bg-glass text-white border-0 shadow-sm h-100 p-3 premium-card" data-surah-id="${surah.id}">
-                <div class="d-flex align-items-center justify-content-between">
+            <div class="card border-0 shadow-lg h-100 premium-card hover-lift overflow-hidden position-relative" data-surah-id="${surah.id}" style="border: 1px solid rgba(212,175,55,0.2) !important; background: linear-gradient(145deg, #0c261c, #071a13); border-radius: 20px;">
+                <div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('${ISLAMIC_MOSQUE_IMG}') center/cover; opacity: 0.1; z-index: 0;"></div>
+                <div class="d-flex align-items-center justify-content-between position-relative p-4" style="z-index: 2;">
                     <div class="d-flex align-items-center gap-3">
-                        <div class="surah-number text-secondary fw-bold fs-4">${surah.id}</div>
-                        <div>
-                            <h5 class="mb-0 fw-bold">سورة ${surah.nameArabic}</h5>
-                            <small class="text-muted-custom">${surah.nameEnglish}</small>
-                        </div>
+                        <div class="surah-number text-warning fw-bold fs-4 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.4); width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent-gold);">${surah.id}</div>
+                        <div><h5 class="mb-0 fw-bold font-cairo text-white">${surah.nameArabic}</h5><small class="text-muted-custom">${surah.nameEnglish}</small></div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-glass fav-btn border-0"><i class="${heartClass}"></i></button>
-                        <button class="btn btn-glass play-surah-btn"><i class="fa-solid fa-play"></i></button>
+                        <button class="btn btn-glass fav-btn border-0"><i class="${heartClass} fs-5"></i></button>
+                        <button class="btn btn-primary-custom rounded-circle play-surah-btn d-flex align-items-center justify-content-center shadow-lg" style="width: 45px; height: 45px; border: 1px solid #fff;"><i class="fa-solid fa-play" style="margin-left: 3px;"></i></button>
                     </div>
                 </div>
             </div>
@@ -722,20 +852,38 @@ function buildSurahCard(surah) {
     `;
 }
 
-// الكارت الجديد الفخم للقرّاء (صورة مربعة مدورة الحواف + أيقونة ذهبية) 🕌
 function buildReciterCard(reciter) {
     return `
         <div class="col-xl-3 col-lg-4 col-md-6 reciter-item-card" data-name="${reciter.nameArabic}">
-            <div class="card reciter-card bg-glass border-0 text-center p-4 h-100 premium-card hover-lift" style="cursor:pointer;" onclick="localStorage.setItem('current_view_reciter', '${reciter.id}'); window.location.hash='#/reader'">
-                <div class="position-relative mx-auto mb-3" style="width: 140px; height: 140px;">
-                    <img src="${reciter.displayPhoto}" onerror="handleImageError(this)" alt="صورة إسلامية" class="w-100 h-100 object-fit-cover rounded-4 shadow-lg" style="border: 2px solid var(--accent-gold);">
-                    <div class="position-absolute bottom-0 end-0 bg-dark rounded-circle d-flex align-items-center justify-content-center shadow-lg" style="width: 40px; height: 40px; transform: translate(25%, 25%); border: 2px solid var(--accent-gold);">
-                        <i class="fa-solid fa-microphone-lines text-warning fs-6"></i>
-                    </div>
+            <div class="card reciter-card bg-glass border-0 text-center p-4 h-100 premium-card hover-lift" style="cursor:pointer; border: 1px solid rgba(212,175,55,0.15) !important; background: linear-gradient(to bottom, rgba(12,38,28,0.8), rgba(0,0,0,0.6)); border-radius: 25px;" onclick="localStorage.setItem('current_view_reciter', '${reciter.id}'); window.location.hash='#/reader'">
+                <div class="position-relative mx-auto mb-4" style="width: 130px; height: 130px;">
+                    <img src="${reciter.displayPhoto}" onerror="handleImageError(this)" class="w-100 h-100 object-fit-cover rounded-circle shadow-lg" style="border: 4px solid var(--accent-gold);">
                 </div>
                 <h5 class="text-white fw-bold mb-1 font-cairo">${reciter.nameArabic}</h5>
-                <small class="text-muted-custom mb-3 d-block text-truncate px-2">${reciter.style}</small>
-                <button class="btn btn-outline-custom w-100 mt-auto rounded-pill fw-bold"><i class="fa-solid fa-book-quran me-2"></i> استعرض السور</button>
+                <small class="text-muted-custom mb-3 d-block px-2">${reciter.style}</small>
+                <div class="mt-auto d-inline-block px-4 py-2 rounded-pill bg-dark text-warning border border-warning shadow-sm"><i class="fa-solid fa-headphones me-2"></i> استمع</div>
+            </div>
+        </div>
+    `;
+}
+
+function buildGiantCard(reciter) {
+    return `
+        <div class="col-lg-6 col-md-12 reciter-item-card" data-name="${reciter.nameArabic}">
+            <div class="card bg-glass border-0 p-4 h-100 premium-card hover-lift d-flex flex-row align-items-center overflow-hidden position-relative" style="cursor:pointer; border: 1px solid rgba(212,175,55,0.3) !important; background: linear-gradient(145deg, #0c261c, #000); border-radius: 20px;" onclick="localStorage.setItem('current_view_reciter', '${reciter.id}'); window.location.hash='#/reader'">
+                <div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('${ISLAMIC_MOSQUE_IMG}') center/cover; opacity: 0.05; z-index: 1;"></div>
+                <div class="position-relative z-2 me-4" style="width: 100px; height: 100px; flex-shrink: 0;">
+                    <img src="${reciter.displayPhoto}" onerror="handleImageError(this)" class="w-100 h-100 object-fit-cover rounded-3 shadow-lg" style="border: 2px solid var(--accent-gold);">
+                </div>
+                <div class="text-start flex-grow-1 ms-3 position-relative z-2">
+                    <h4 class="text-white fw-bold mb-2 font-cairo">${reciter.nameArabic}</h4>
+                    <span class="badge bg-dark text-warning rounded-pill px-3 py-2 border border-warning shadow-sm"><i class="fa-solid fa-microphone-lines me-2"></i> ${reciter.style}</span>
+                </div>
+                <div class="ms-auto pe-2 position-relative z-2">
+                    <div class="bg-dark rounded-circle d-flex align-items-center justify-content-center shadow-lg border border-secondary" style="width: 50px; height: 50px;">
+                        <i class="fa-solid fa-chevron-left text-warning fs-4"></i>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -748,7 +896,6 @@ function attachCardEvents(surahs, explicitReciter = null) {
             const card = btn.closest('.premium-card');
             const surahId = parseInt(card.getAttribute('data-surah-id'));
             const selectedSurah = surahs.find(s => s.id === surahId);
-            
             let finalReciter = explicitReciter;
             if (!finalReciter) {
                 const reciters = await API.getReciters();
@@ -759,7 +906,6 @@ function attachCardEvents(surahs, explicitReciter = null) {
                 }
                 if (!finalReciter) finalReciter = reciters[0];
             }
-
             const playerToUse = window.globalPlayer || globalPlayer;
             playerToUse.playTrack(selectedSurah, finalReciter);
             showPlayerUI();
@@ -781,28 +927,6 @@ function attachCardEvents(surahs, explicitReciter = null) {
 function showPlayerUI() {
     const p = document.getElementById('global-player');
     if (p && !p.classList.contains('active')) {
-        p.classList.add('active');
-        p.style.opacity = '1';
-        p.style.transform = 'translateY(0)';
+        p.classList.add('active'); p.style.opacity = '1'; p.style.transform = 'translateY(0)';
     }
 }
-
-// ==========================================
-// 5. نظام المظهر (Theme)
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('themeToggleBtn');
-    const toggleIcon = document.getElementById('themeToggleIcon');
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            if(toggleIcon) toggleIcon.className = newTheme === 'light' ? 'fa-solid fa-moon fs-4' : 'fa-solid fa-sun fs-4';
-        });
-    }
-});
