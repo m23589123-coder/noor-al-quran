@@ -1,6 +1,6 @@
 // sw.js - Service Worker for Offline Experience (PWA)
 
-const CACHE_NAME = 'noor-alquran-cache-v1';
+const CACHE_NAME = 'tarteel-cache-v3';
 
 // الملفات الأساسية اللي لازم تتحفظ عشان الموقع يفتح أوفلاين
 const ASSETS_TO_CACHE = [
@@ -67,6 +67,20 @@ self.addEventListener('fetch', event => {
         event.request.url.includes('.mp3') || 
         event.request.url.includes('radiojar')) {
         return; 
+    }
+
+    // ملفات الموقع نفسه: نجيبها من النت الأول (عشان التعديلات تظهر فورًا) ولو مفيش نت نرجع للكاش
+    if (event.request.method === 'GET' && new URL(event.request.url).origin === self.location.origin) {
+        event.respondWith(
+            fetch(event.request).then(response => {
+                if (response && response.status === 200) {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+                }
+                return response;
+            }).catch(() => caches.match(event.request).then(r => r || (event.request.mode === 'navigate' ? caches.match('./index.html') : undefined)))
+        );
+        return;
     }
 
     event.respondWith(

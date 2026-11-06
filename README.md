@@ -1,6 +1,6 @@
-# 📖 نور القرآن (Noor Al-Quran Premium)
+# 📖 ترتيل (Tarteel)
 
-![Noor Al-Quran](https://cdn-icons-png.flaticon.com/512/3382/3382152.png)
+![Tarteel](https://cdn-icons-png.flaticon.com/512/3382/3382152.png)
 
 **منصة قرآنية متكاملة، بتصميم عصري (Glassmorphism) وتجربة استماع استثنائية مستوحاة من كبرى منصات الصوتيات العالمية.**
 تم تصميم المنصة لتكون خالية تماماً من الخوادم (Serverless)، تعتمد بالكامل على الـ Frontend وتقنية الـ PWA لتعمل كالتطبيق الأصلي دون الحاجة لإنترنت للملفات المحفوظة.
@@ -25,7 +25,7 @@
 تم تنظيم المشروع بأفضل الممارسات الهندسية ليكون جاهزاً للنشر المباشر (Production Ready):
 
 ```text
-noor-al-quran/
+tarteel/
 ├── index.html              # النواة الأساسية للتطبيق
 ├── manifest.json           # ملف تعريف تطبيق الـ PWA
 ├── sw.js                   # Service Worker لدعم العمل بدون إنترنت
