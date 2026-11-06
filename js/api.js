@@ -24,6 +24,16 @@ export const API = {
                 { id: 995, nameArabic: "مشاري راشد العفاسي", nameEnglish: "Mishary Alafasy", style: "المرتل (حفص)", displayPhoto: unifiedIslamicPhoto, serverUrl: "https://server8.mp3quran.net/afs", isEgyptianLibrary: false }
             ];
 
+            // محمود علي البنا: نجيب رابط السيرفر الصح من API موقع mp3quran بدل الرابط الثابت
+            try {
+                const bn = data.reciters.find(r => r.name.includes("البنا"));
+                if (bn && bn.moshaf && bn.moshaf.length) {
+                    const mo = bn.moshaf.find(m => (m.name || '').includes("مرتل")) || bn.moshaf[0];
+                    const g = premiumGiants.find(r => r.id === 992);
+                    if (g && mo.server) g.serverUrl = mo.server;
+                }
+            } catch (e) {}
+
             const egyptianNames = ["الطبلاوي", "محمد رفعت", "أحمد نعينع", "البهتيمي", "الشعشاعي", "شعيشع"];
 
             const formattedReciters = data.reciters.map(r => {
@@ -46,7 +56,13 @@ export const API = {
 
     async getRadios() { 
         return [
-            { nameArabic: "إذاعة القرآن الكريم (القاهرة)", url: "https://stream.radioquraan.com/egypt", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=400&q=80" },
+            {
+                nameArabic: "إذاعة القرآن الكريم (القاهرة)",
+                url: "https://n0a.radiojar.com/8s5u5tpdtwzuv",
+                // لو الرابط الأول وقع، المشغّل بيجرب اللي بعده تلقائيًا
+                urls: ["https://n0a.radiojar.com/8s5u5tpdtwzuv", "https://stream.radiojar.com/8s5u5tpdtwzuv", "https://n12.radiojar.com/8s5u5tpdtwzuv"],
+                image: "assets/images/icon-512.png"
+            },
             { nameArabic: "إذاعة عبد الباسط عبد الصمد", url: "https://qurango.net/radio/abdulbasit_abdulsamad", image: "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=400&q=80" },
             { nameArabic: "إذاعة مشاري العفاسي", url: "https://qurango.net/radio/mishary_alafasi", image: "https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=400&q=80" },
             // صورة إسلامية مخصصة ومختلفة لإذاعة الحصري

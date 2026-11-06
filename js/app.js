@@ -8,27 +8,55 @@ import { StorageManager } from './storage.js';
 import { initCustomCursor } from './cursor.js';
 
 // ==========================================
-// 1. نظام الأذان التلقائي 
+// 1. نظام الأذان التلقائي (صوت المؤذن + إعدادات + تشغيل يومي)
 // ==========================================
 class AdhanManager {
     static init() {
         this.prayers = {};
-        this.adhanAudio = new Audio('https://download.quranicaudio.com/adhan/makkah.mp3');
         this.hasPlayed = {};
-        
-        if ("Notification" in window && Notification.permission !== "granted") {
-            Notification.requestPermission();
+        this.coords = null;
+        this.dateKey = new Date().toDateString();
+        this.adhanAudio = new Audio();
+        this.adhanAudio.preload = 'auto';
+        this._setupUnlock();
+
+        if ("Notification" in window && Notification.permission === "default") {
+            try { Notification.requestPermission(); } catch (e) {}
         }
 
+        this.refreshTimes();
+        setInterval(() => this.checkPrayerTime(), 20000);
+    }
+
+    // ---------- الإعدادات (محفوظة في المتصفح) ----------
+    static isEnabled() {
+        try { return localStorage.getItem('adhan_enabled') !== '0'; } catch (e) { return true; }
+    }
+    static setEnabled(v) {
+        try { localStorage.setItem('adhan_enabled', v ? '1' : '0'); } catch (e) {}
+    }
+    static getVoice() {
+        try { return localStorage.getItem('adhan_voice') || 'makkah'; } catch (e) { return 'makkah'; }
+    }
+    static setVoice(v) {
+        try { localStorage.setItem('adhan_voice', v); } catch (e) {}
+    }
+
+    // ---------- مواقيت الصلاة ----------
+    static refreshTimes() {
+        if (this.coords) { this.fetchPrayerTimesByLocation(this.coords.lat, this.coords.lng); return; }
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (position) => this.fetchPrayerTimesByLocation(position.coords.latitude, position.coords.longitude),
-                () => this.fetchPrayerTimesByCity("Hurghada", "Egypt")
+                (p) => {
+                    this.coords = { lat: p.coords.latitude, lng: p.coords.longitude };
+                    this.fetchPrayerTimesByLocation(this.coords.lat, this.coords.lng);
+                },
+                () => this.fetchPrayerTimesByCity("Cairo", "Egypt"),
+                { timeout: 8000 }
             );
         } else {
-            this.fetchPrayerTimesByCity("Hurghada", "Egypt");
+            this.fetchPrayerTimesByCity("Cairo", "Egypt");
         }
-        setInterval(() => this.checkPrayerTime(), 60000);
     }
 
     static async fetchPrayerTimesByLocation(lat, lng) {
@@ -36,7 +64,7 @@ class AdhanManager {
             const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=5`);
             const data = await res.json();
             this.setPrayers(data.data.timings);
-        } catch(e) { console.error("Adhan Location Error", e); }
+        } catch (e) { console.error("Adhan Location Error", e); }
     }
 
     static async fetchPrayerTimesByCity(city, country) {
@@ -45,30 +73,95 @@ class AdhanManager {
     }
 
     static setPrayers(timings) {
-        this.prayers = { 'الفجر': timings.Fajr, 'الظهر': timings.Dhuhr, 'العصر': timings.Asr, 'المغرب': timings.Maghrib, 'العشاء': timings.Isha };
+        const t = (v) => String(v || '').slice(0, 5); // "05:12 (EET)" -> "05:12"
+        this.prayers = { 'الفجر': t(timings.Fajr), 'الظهر': t(timings.Dhuhr), 'العصر': t(timings.Asr), 'المغرب': t(timings.Maghrib), 'العشاء': t(timings.Isha) };
         this.hasPlayed = {};
     }
 
     static checkPrayerTime() {
-        if (!this.prayers || Object.keys(this.prayers).length === 0) return;
         const now = new Date();
+        const todayKey = now.toDateString();
+        // لو اليوم اتغير، نحدّث المواقيت (عشان الأذان يشتغل كل يوم من غير ريفريش)
+        if (todayKey !== this.dateKey) {
+            this.dateKey = todayKey;
+            this.hasPlayed = {};
+            this.refreshTimes();
+            return;
+        }
+        if (!this.isEnabled()) return;
+        if (!this.prayers || Object.keys(this.prayers).length === 0) return;
         const currentTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-        for (let [name, time] of Object.entries(this.prayers)) {
+        for (const [name, time] of Object.entries(this.prayers)) {
             if (time === currentTime && !this.hasPlayed[name]) {
-                this.playAdhan(name);
                 this.hasPlayed[name] = true;
+                this.playAdhan(name);
             }
         }
     }
 
+    // ---------- تشغيل الأذان ----------
+    // ملفات الصوت بتتدوّر عليها بالترتيب ده، وأول ملف شغال هو اللي بيتشغّل
+    static candidates(prayerName) {
+        const v = this.getVoice();
+        const list = [];
+        if (prayerName === 'الفجر') list.push(`assets/audio/adhan-${v}-fajr.mp3`, 'assets/audio/adhan-fajr.mp3');
+        list.push(`assets/audio/adhan-${v}.mp3`, 'assets/audio/adhan.mp3');
+        list.push('https://download.quranicaudio.com/adhan/makkah.mp3'); // رابط احتياطي (الرابط الأصلي)
+        return list;
+    }
+
+    static async _playList(list) {
+        for (const url of list) {
+            try {
+                this.adhanAudio.src = url;
+                this.adhanAudio.load();
+                await this.adhanAudio.play();
+                return url;
+            } catch (e) {
+                if (e && e.name === 'NotAllowedError') { console.warn('المتصفح منع تشغيل الأذان لحد ما تتفاعل مع الصفحة'); return null; }
+                // الملف مش موجود أو مش شغال -> نجرب اللي بعده
+            }
+        }
+        console.warn('مفيش ملف أذان شغال. حط ملفات الأذان في assets/audio');
+        return null;
+    }
+
     static playAdhan(prayerName) {
-        this.adhanAudio.currentTime = 0;
-        this.adhanAudio.play().catch(e => console.log("Adhan blocked"));
+        // لو في تلاوة شغالة نوقفها عشان الأذان يتسمع
+        try { if (globalPlayer && globalPlayer.isPlaying) globalPlayer.togglePlay(); } catch (e) {}
+        this._playList(this.candidates(prayerName));
         if ("Notification" in window && Notification.permission === "granted") {
-            new Notification(`حان الآن موعد أذان ${prayerName}`, { body: "حي على الصلاة، حي على الفلاح", icon: "https://cdn-icons-png.flaticon.com/512/3389/3389081.png" });
+            try {
+                new Notification(`حان الآن موعد أذان ${prayerName}`, { body: "حي على الصلاة، حي على الفلاح", icon: "assets/images/icon-192.png" });
+            } catch (e) {}
         }
     }
+
+    static test(prayerName = 'الظهر') { this.playAdhan(prayerName); }
+    static stop() { try { this.adhanAudio.pause(); this.adhanAudio.currentTime = 0; } catch (e) {} }
+
+    // المتصفحات (خصوصًا موبايل) بتمنع الصوت التلقائي، فبنفتحه أول لمسة من المستخدم
+    static _setupUnlock() {
+        const SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+        const events = ['click', 'touchstart', 'keydown'];
+        const unlock = () => {
+            events.forEach(ev => document.removeEventListener(ev, unlock, true));
+            const a = this.adhanAudio;
+            try {
+                a.muted = true; a.src = SILENT;
+                const p = a.play();
+                const done = () => { try { a.pause(); } catch (e) {} a.muted = false; };
+                if (p && p.then) p.then(done).catch(() => { a.muted = false; }); else done();
+            } catch (e) { a.muted = false; }
+        };
+        events.forEach(ev => document.addEventListener(ev, unlock, true));
+    }
 }
+AdhanManager.VOICES = {
+    makkah: 'الحرم المكي',
+    madinah: 'الحرم النبوي',
+    egypt: 'الأذان المصري'
+};
 
 const ISLAMIC_FALLBACK_IMG = 'https://images.unsplash.com/photo-1608501821300-4f99e58bba77?auto=format&fit=crop&w=1200&q=80';
 const ISLAMIC_MOSQUE_IMG = 'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80';
@@ -114,6 +207,39 @@ function formatAMPM(time24) {
 }
 
 // ==========================================
+// مساعدات القوائم: ربط اسم القارئ المكتوب في ملفات البيانات بالقارئ الحقيقي
+// ==========================================
+function normAr(s) {
+    return String(s || '')
+        .replace(/[\u064B-\u065F\u0670]/g, '')
+        .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
+        .replace(/\s+/g, ' ').trim();
+}
+
+const RECITER_ALIASES = {
+    banna: 'البنا', basit: 'عبد الباسط', minshawi: 'المنشاوي', husary: 'الحصري', husari: 'الحصري',
+    mishary: 'العفاسي', muaiqly: 'المعيقلي', jaber: 'جابر', jibreel: 'جبريل', laythi: 'الليثي',
+    saeed: 'سعيد', shahat: 'شحات', ajmi: 'العجمي', mustafa: 'مصطفى اسماعيل', rifaat: 'رفعت',
+    bahtimi: 'البهتيمي', fashni: 'الفشني', sharqawi: 'الشرقاوي', shuaisha: 'شعيشع', dosari: 'الدوسري'
+};
+
+function findReciter(reciters, key) {
+    if (!key || !Array.isArray(reciters)) return null;
+    const needle = normAr(RECITER_ALIASES[String(key).toLowerCase()] || key);
+    return reciters.find(r => normAr(r.nameArabic).includes(needle)) || null;
+}
+
+function pickDefaultReciter(reciters) {
+    if (!Array.isArray(reciters) || !reciters.length) return null;
+    try {
+        const saved = localStorage.getItem('last_reciter_id');
+        const found = saved && reciters.find(r => String(r.id) === String(saved));
+        if (found) return found;
+    } catch (e) {}
+    return reciters[0];
+}
+
+// ==========================================
 // 2. منظومة المسارات الشاملة (جميع الأقسام)
 // ==========================================
 function setupRoutes() {
@@ -128,20 +254,27 @@ function setupRoutes() {
 
             let homeHtml = `
                 <section class="position-relative d-flex align-items-center justify-content-center mb-5 overflow-hidden rounded-4 mt-2 shadow-lg" style="min-height: 75vh; border: 1px solid rgba(212, 175, 55, 0.1);">
-                    <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('${ISLAMIC_MOSQUE_IMG}') center/cover; filter: brightness(0.3);"></div>
+                    <div class="position-absolute top-0 start-0 w-100 h-100 hero-bg"></div>
                     <div class="position-absolute top-50 start-50 translate-middle w-100 h-100" style="background: radial-gradient(circle at center, rgba(212, 175, 55, 0.15) 0%, transparent 60%);"></div>
                     <div class="container z-1 position-relative text-center" data-aos="zoom-out" data-aos-duration="1500">
                         <div class="mx-auto p-4 p-md-5" style="max-width: 850px; border-radius: 30px; background: rgba(12, 38, 28, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(212, 175, 55, 0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-                            <div class="d-inline-flex p-3 rounded-circle mb-4 shadow-lg" style="background: linear-gradient(135deg, var(--accent-gold), #8A6D1C);"><i class="fa-solid fa-book-quran text-white" style="font-size: 2.5rem;"></i></div>
-                            <h1 class="fw-bold mb-2" style="font-family: 'Amiri', serif; font-size: 3.5rem; text-shadow: 0 4px 15px rgba(0,0,0,0.5); color: #FFF;">نــور <span style="color: var(--accent-gold);">القــرآن</span></h1>
-                            <h2 class="text-white fw-bold mb-4 mt-3 font-cairo" style="font-size: 2rem;">استمع للقرآن بنقاء وصفاء..</h2>
-                            <p class="fs-5 text-light mb-5 font-cairo lh-lg px-md-4">أكثر من 200 قارئ من جميع أنحاء العالم.</p>
+                            <div class="home-verse mb-3">﴿ وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا ﴾</div>
+                            <h1 class="fw-bold mb-2 home-title">تــرتــيــل</h1>
+                            <p class="fs-5 text-light mb-4 font-cairo lh-lg px-md-4">استمع للقرآن بنقاء وصفاء، بأصوات أكثر من 200 قارئ</p>
+                            <div class="d-flex justify-content-center gap-2 gap-md-3 flex-wrap mb-5">
+                                <span class="home-chip"><i class="fa-solid fa-book-quran"></i> 114 سورة</span>
+                                <span class="home-chip"><i class="fa-solid fa-microphone-lines"></i> +200 قارئ</span>
+                                <span class="home-chip"><i class="fa-solid fa-tower-broadcast"></i> بث مباشر</span>
+                            </div>
                             <div class="d-flex justify-content-center gap-3 flex-wrap">
                                 <button class="btn btn-primary-custom rounded-pill px-5 py-3 fw-bold fs-5 shadow-lg d-flex align-items-center gap-2" onclick="window.location.hash='#/quran'"><i class="fa-solid fa-headphones-simple"></i> ابدأ الاستماع</button>
                                 <button class="btn btn-outline-light rounded-pill px-5 py-3 fw-bold fs-5 shadow-sm d-flex align-items-center gap-2 bg-glass border-2" onclick="window.location.hash='#/radio'"><i class="fa-solid fa-tower-broadcast text-warning"></i> الإذاعة المباشرة</button>
                             </div>
                         </div>
                     </div>
+                </section>
+                <section class="container pt-2 pb-0" data-aos="fade-up">
+                    <div class="quick-grid"><a href="#/prayer" class="quick-tile text-decoration-none"><i class="fa-solid fa-clock"></i><span>مواقيت الصلاة</span></a><a href="#/qibla" class="quick-tile text-decoration-none"><i class="fa-solid fa-compass"></i><span>القبلة</span></a><a href="#/azkar" class="quick-tile text-decoration-none"><i class="fa-solid fa-hands-praying"></i><span>حصن المسلم</span></a><a href="#/playlists" class="quick-tile text-decoration-none"><i class="fa-solid fa-layer-group"></i><span>القوائم</span></a><a href="#/tafsir" class="quick-tile text-decoration-none"><i class="fa-solid fa-book-open"></i><span>التفسير</span></a><a href="#/readers" class="quick-tile text-decoration-none"><i class="fa-solid fa-microphone-lines"></i><span>القرّاء</span></a></div>
                 </section>
                 <section class="container py-5" data-aos="fade-up">
                     <div class="d-flex justify-content-between align-items-end mb-4 border-bottom border-secondary pb-3" style="border-color: rgba(255,255,255,0.05) !important;">
@@ -182,7 +315,7 @@ function setupRoutes() {
                                 <h5 class="fw-bold mb-1 text-white font-cairo">${radio.nameArabic}</h5>
                                 <div class="d-flex align-items-center gap-2 mt-2"><span class="spinner-grow spinner-grow-sm text-danger" role="status"></span><small class="text-warning fw-bold">بث مباشر</small></div>
                             </div>
-                            <button class="btn btn-primary-custom rounded-circle play-radio-btn d-flex align-items-center justify-content-center shadow-lg" style="width: 55px; height: 55px; border: 2px solid #fff;" data-url="${radio.url}" data-name="${radio.nameArabic}" data-image="${radio.image}"><i class="fa-solid fa-play fs-4" style="margin-left:4px;"></i></button>
+                            <button class="btn btn-primary-custom rounded-circle play-radio-btn d-flex align-items-center justify-content-center shadow-lg" style="width: 55px; height: 55px; border: 2px solid #fff;" data-url="${radio.url}" data-urls='${JSON.stringify(radio.urls || [radio.url])}' data-name="${radio.nameArabic}" data-image="${radio.image}"><i class="fa-solid fa-play fs-4" style="margin-left:4px;"></i></button>
                         </div>
                     </div>
                 `;
@@ -194,7 +327,9 @@ function setupRoutes() {
                     const target = e.currentTarget;
                     if (window.globalPlayer || globalPlayer) {
                         const playerToUse = window.globalPlayer || globalPlayer;
-                        playerToUse.playRadio({ nameArabic: target.getAttribute('data-name'), url: target.getAttribute('data-url'), image: target.getAttribute('data-image') });
+                        let urls = [];
+                        try { urls = JSON.parse(target.getAttribute('data-urls') || '[]'); } catch (err) {}
+                        playerToUse.playRadio({ nameArabic: target.getAttribute('data-name'), url: target.getAttribute('data-url'), urls, image: target.getAttribute('data-image') });
                         showPlayerUI();
                     }
                 });
@@ -584,16 +719,73 @@ function setupRoutes() {
         });
     });
 
-    // --- 10. القوائم والفئات الخاصة (مليئة بالكامل ببيانات حقيقية وقائمة زين محمد سليم السكري) ---
+    // --- 10. القوائم والفئات الخاصة (كل بطاقة بتشغّل سورها الحقيقية بالترتيب) ---
     const playlistsRouteHandler = async (container) => {
         try {
-            let collections = await API.getCollections();
-            let appPlaylists = await API.getPlaylists();
-            let surahs = await API.getSurahs();
+            const [collections, appPlaylists, surahs, reciters] = await Promise.all([
+                API.getCollections(), API.getPlaylists(), API.getSurahs(), API.getReciters()
+            ]);
+            const defaultReciter = pickDefaultReciter(reciters);
+            const surahById = (id) => surahs.find(s => s.id === Number(id));
+            const registry = {}; // key -> مقاطع التشغيل
 
-            let html = `
+            const makeTracks = (pairs) => pairs
+                .map(([sid, rkey]) => ({ surah: surahById(sid), reciter: (rkey && findReciter(reciters, rkey)) || defaultReciter }))
+                .filter(t => t.surah && t.reciter);
+
+            const buildCard = (key, title, desc, img, icon, tracks) => {
+                if (!tracks.length) return '';
+                registry[key] = tracks;
+                const rows = tracks.map((t, i) => `
+                    <li class="play-track d-flex align-items-center gap-2 py-2 px-2 rounded-3" data-key="${key}" data-idx="${i}" style="cursor:pointer; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <span class="text-warning fw-bold" style="width: 28px;">${i + 1}</span>
+                        <span class="flex-grow-1 text-white small">${t.surah.nameArabic} <span class="text-muted-custom">— ${t.reciter.nameArabic}</span></span>
+                        <i class="fa-solid fa-play text-warning small"></i>
+                    </li>`).join('');
+                return `
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card bg-glass border-0 rounded-4 overflow-hidden h-100 shadow-lg premium-card">
+                            <div class="position-relative" style="height: 150px;">
+                                <img src="${img}" onerror="handleImageError(this)" class="w-100 h-100 object-fit-cover" alt="">
+                                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(7,26,19,0.95));"></div>
+                                <div class="position-absolute bottom-0 start-0 w-100 p-3 d-flex align-items-center gap-3">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:46px;height:46px;background: rgba(212,175,55,0.2);"><i class="fa-solid ${icon} text-warning fs-5"></i></div>
+                                    <h5 class="fw-bold text-white font-cairo mb-0">${title}</h5>
+                                </div>
+                            </div>
+                            <div class="p-4 d-flex flex-column flex-grow-1">
+                                <p class="text-muted-custom small mb-3">${desc || ''}</p>
+                                <div class="small text-warning mb-3"><i class="fa-solid fa-list-ol me-1"></i> ${tracks.length} مقاطع</div>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button class="btn btn-primary-custom flex-grow-1 rounded-pill fw-bold play-all" data-key="${key}"><i class="fa-solid fa-play me-2"></i> تشغيل الكل</button>
+                                    <button class="btn btn-outline-custom rounded-pill" type="button" data-bs-toggle="collapse" data-bs-target="#list-${key}" aria-expanded="false" title="عرض المقاطع"><i class="fa-solid fa-chevron-down"></i></button>
+                                </div>
+                                <ul class="list-unstyled collapse mb-0 mt-2" id="list-${key}">${rows}</ul>
+                            </div>
+                        </div>
+                    </div>`;
+            };
+
+            let collectionsHtml = '';
+            collections.forEach((cat, i) => {
+                const ids = cat.featuredSurahs || cat.surahs || [];
+                const keys = cat.featuredReciters || [];
+                const tracks = makeTracks(ids.map((id, n) => [id, keys.length ? keys[n % keys.length] : null]));
+                collectionsHtml += buildCard('c' + i, cat.title, cat.description, cat.image || ISLAMIC_MOSQUE_IMG, cat.icon || 'fa-folder', tracks);
+            });
+
+            let playlistsHtml = '';
+            appPlaylists.forEach((pl, i) => {
+                const pairs = Array.isArray(pl.items)
+                    ? pl.items.map(it => [it.surahId, it.reciterId])
+                    : (pl.surahs || []).map(id => [id, null]);
+                playlistsHtml += buildCard('p' + i, pl.title, pl.description, pl.cover || ISLAMIC_FALLBACK_IMG, 'fa-star', makeTracks(pairs));
+            });
+
+            container.innerHTML = `
                 <section class="container py-5" data-aos="fade-in">
-                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center" style="height: 280px; background: linear-gradient(135deg, rgba(7,26,19,0.9), rgba(212,175,55,0.3)), url('${ISLAMIC_FALLBACK_IMG}') center/cover;">
+                    <div class="position-relative rounded-4 overflow-hidden mb-5 shadow-lg d-flex align-items-center justify-content-center hero-bg" style="height: 280px;">
+                        <div class="position-absolute top-0 start-0 w-100 h-100" style="background: rgba(7,26,19,0.55);"></div>
                         <div class="text-center z-1 position-relative px-3">
                             <i class="fa-solid fa-layer-group text-warning mb-3" style="font-size: 3.5rem;"></i>
                             <h1 class="fw-bold text-white font-cairo mb-2">القوائم والفئات الخاصة</h1>
@@ -605,62 +797,26 @@ function setupRoutes() {
                         <li class="nav-item"><button class="nav-link rounded-pill px-4 py-2 fw-bold font-cairo shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-app-playlists"><i class="fa-solid fa-star me-2"></i> مختارات القوائم</button></li>
                     </ul>
                     <div class="tab-content" id="pills-tabContent">
-            `;
-
-            // تبويب المناسبات
-            html += `<div class="tab-pane fade show active" id="tab-collections"><div class="row g-4">`;
-            collections.forEach(cat => {
-                html += `
-                    <div class="col-lg-4 col-md-6">
-                        <div class="card bg-glass text-white border-0 shadow-lg text-center p-4 h-100 premium-card overflow-hidden" style="border-radius: 20px; border-bottom: 4px solid var(--accent-gold) !important;">
-                            <div class="position-absolute w-100 h-100 top-0 start-0" style="background: url('${cat.image || ISLAMIC_MOSQUE_IMG}') center/cover; opacity: 0.15;"></div>
-                            <div class="position-relative z-1 p-3">
-                                <div class="p-3 rounded-circle d-inline-block mb-3" style="background: rgba(212, 175, 55, 0.15);"><i class="fa-solid ${cat.icon || 'fa-folder'} text-warning fs-1"></i></div>
-                                <h4 class="fw-bold font-cairo mb-3">${cat.title}</h4>
-                                <p class="text-muted-custom small">مختارة بعناية لتجربة استماع هادئة</p>
-                            </div>
-                        </div>
+                        <div class="tab-pane fade show active" id="tab-collections"><div class="row g-4">${collectionsHtml}</div></div>
+                        <div class="tab-pane fade" id="tab-app-playlists"><div class="row g-4">${playlistsHtml}</div></div>
                     </div>
-                `;
-            });
-            html += `</div></div>`;
+                </section>`;
 
-            // تبويب القوائم المختارة (تتضمن زين محمد سليم السكري)
-            html += `<div class="tab-pane fade" id="tab-app-playlists"><div class="row g-4">`;
-            appPlaylists.forEach(pl => {
-                html += `
-                    <div class="col-lg-4 col-md-6">
-                        <div class="card bg-glass border-0 rounded-4 overflow-hidden h-100 shadow-lg premium-card">
-                            <div class="position-relative" style="height: 180px;">
-                                <img src="${pl.cover}" onerror="handleImageError(this)" class="w-100 h-100 object-fit-cover">
-                                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8));"></div>
-                            </div>
-                            <div class="p-4 d-flex flex-column h-100">
-                                <h4 class="fw-bold text-white mb-3 font-cairo">${pl.title}</h4>
-                                <div class="mt-auto">
-                                    <button class="btn btn-outline-custom w-100 rounded-pill fw-bold play-playlist-btn" data-surahs='${JSON.stringify(pl.surahs || [1, 2, 3])}'><i class="fa-solid fa-play me-2"></i> تشغيل القائمة</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            html += `</div></div></div></section>`;
-            container.innerHTML = html;
-
-            // تفعيل زر تشغيل القوائم
-            container.querySelectorAll('.play-playlist-btn').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const surahIds = JSON.parse(btn.getAttribute('data-surahs'));
-                    const reciters = await API.getReciters();
-                    const targetSurah = surahs.find(s => s.id === surahIds[0]) || surahs[0];
-                    const playerToUse = window.globalPlayer || globalPlayer;
-                    playerToUse.playTrack(targetSurah, reciters[0]);
+            container.onclick = (e) => {
+                const all = e.target.closest('.play-all');
+                const one = e.target.closest('.play-track');
+                const player = window.globalPlayer || globalPlayer;
+                if (all && registry[all.dataset.key]) {
+                    player.playQueue(registry[all.dataset.key], 0);
                     showPlayerUI();
-                });
-            });
-
-        } catch(e) {}
+                } else if (one && registry[one.dataset.key]) {
+                    player.playQueue(registry[one.dataset.key], Number(one.dataset.idx));
+                    showPlayerUI();
+                }
+            };
+        } catch (e) {
+            console.error("Playlists Error:", e);
+        }
     };
     Router.addRoute('#/playlists', playlistsRouteHandler);
     Router.addRoute('#/categories', playlistsRouteHandler);
@@ -818,10 +974,32 @@ function setupRoutes() {
                         <div class="form-check form-switch fs-4"><input class="form-check-input shadow-none" type="checkbox" id="autoPlaySwitch" ${autoPlay ? 'checked' : ''}></div>
                     </div>
                 </div>
+                <div class="card bg-glass border-0 rounded-4 p-4 mb-4 shadow-sm">
+                    <h5 class="text-white fw-bold mb-3 font-cairo"><i class="fa-solid fa-bell text-warning me-2"></i> أذان أوقات الصلاة</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div><h6 class="text-white mb-1">تشغيل الأذان تلقائيًا</h6></div>
+                        <div class="form-check form-switch fs-4"><input class="form-check-input shadow-none" type="checkbox" id="adhanSwitch" ${AdhanManager.isEnabled() ? 'checked' : ''}></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-white mb-2" for="adhanVoice">صوت المؤذن</label>
+                        <select id="adhanVoice" class="form-select bg-dark text-white border-secondary">
+                            ${Object.entries(AdhanManager.VOICES).map(([k, n]) => `<option value="${k}" ${AdhanManager.getVoice() === k ? 'selected' : ''}>${n}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary-custom rounded-pill px-4" id="adhanTest"><i class="fa-solid fa-play me-2"></i> تجربة الأذان</button>
+                        <button class="btn btn-outline-custom rounded-pill px-4" id="adhanStop"><i class="fa-solid fa-stop me-2"></i> إيقاف</button>
+                    </div>
+                    <small class="text-muted-custom d-block mt-3">الأذان بيشتغل طول ما الموقع مفتوح في المتصفح، وبيوقّف أي تلاوة شغالة وقت الأذان.</small>
+                </div>
             </section>
         `;
         document.getElementById('themeSwitch').addEventListener('change', (e) => SettingsManager.saveSetting('theme', e.target.checked ? 'dark' : 'light'));
         document.getElementById('autoPlaySwitch').addEventListener('change', (e) => SettingsManager.saveSetting('autoPlayNext', e.target.checked));
+        document.getElementById('adhanSwitch').addEventListener('change', (e) => AdhanManager.setEnabled(e.target.checked));
+        document.getElementById('adhanVoice').addEventListener('change', (e) => AdhanManager.setVoice(e.target.value));
+        document.getElementById('adhanTest').addEventListener('click', () => AdhanManager.test());
+        document.getElementById('adhanStop').addEventListener('click', () => AdhanManager.stop());
     });
 
 } // =================== نهاية دالة setupRoutes =================== //

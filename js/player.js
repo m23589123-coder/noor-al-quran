@@ -14,6 +14,10 @@ class AudioPlayer {
         this.currentReciter = null;
         this.currentRadio = null;
         this.playPromise = null; // لمنع خطأ AbortError
+        this.queue = [];         // قائمة التشغيل الحالية
+        this.queueIndex = -1;
+        this.radioUrls = [];     // روابط احتياطية للإذاعة
+        this.radioUrlIndex = 0;
         
         // استهداف عناصر الـ UI بأمان
         this.elements = {
@@ -44,10 +48,10 @@ class AudioPlayer {
 
         // أزرار التقديم والتأخير 15 ثانية (الميزة الجديدة)
         if (this.elements.nextBtn) {
-            this.elements.nextBtn.addEventListener('click', () => this.skipTime(15));
+            this.elements.nextBtn.addEventListener('click', () => this.queue.length ? this.playNext() : this.skipTime(15));
         }
         if (this.elements.prevBtn) {
-            this.elements.prevBtn.addEventListener('click', () => this.skipTime(-15));
+            this.elements.prevBtn.addEventListener('click', () => this.queue.length ? this.playPrev() : this.skipTime(-15));
         }
 
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -77,6 +81,11 @@ class AudioPlayer {
             this.isPlaying = false;
             this.updatePlayIcon();
             if (this.elements.progressBar) this.elements.progressBar.style.width = '0%';
+            // تشغيل المقطع التالي تلقائيًا لو في قائمة تشغيل
+            if (this.currentMode === 'SURAH' && this.queue.length && this.queueIndex < this.queue.length - 1) {
+                this.playNext();
+                return;
+            }
             if (this.currentMode === 'SURAH') {
                 if(window.StorageManager) {
                     StorageManager.incrementSurahsCompleted();
@@ -88,6 +97,7 @@ class AudioPlayer {
         // Error Handling احترافي يمنع كراش المتصفح ويدعم الأوفلاين
         this.audio.addEventListener('error', (e) => {
             console.warn("Audio Stream Error:", e);
+            if (this._radioFallback()) return; // جرّب رابط الإذاعة البديل
             this.setLoadingState(false);
             this.isPlaying = false;
             this.updatePlayIcon();
@@ -126,7 +136,7 @@ class AudioPlayer {
                 this.setLoadingState(false);
                 this.isPlaying = false;
                 this.updatePlayIcon();
-                if (error.name !== 'AbortError') {
+                if (error.name !== 'AbortError' && !this._radioFallback()) {
                     console.warn("Playback prevented:", error);
                     if(navigator.onLine && window.StorageManager) {
                         StorageManager.showToast('تعذر التشغيل، يرجى المحاولة لاحقاً.', 'error');
@@ -136,12 +146,14 @@ class AudioPlayer {
         }
     }
 
-    playTrack(surah, reciter, startTime = 0) {
+    playTrack(surah, reciter, startTime = 0, fromQueue = false) {
         if (!surah || !reciter) return;
+        if (!fromQueue) { this.queue = []; this.queueIndex = -1; }
+        this.showUI();
         this.currentMode = 'SURAH';
         this.currentSurah = surah;
         this.currentReciter = reciter;
-        this.updateUI(surah.nameArabic, reciter.nameArabic, reciter.displayPhoto || reciter.photo);
+        this.updateUI(surah.nameArabic, reciter.nameArabic + (fromQueue && this.queue.length > 1 ? ` • ${this.queueIndex + 1}/${this.queue.length}` : ''), reciter.displayPhoto || reciter.photo);
 
         const surahNum = surah.id || surah.number || 1;
         const fileName = String(surahNum).padStart(3, '0') + '.mp3';
@@ -156,19 +168,64 @@ class AudioPlayer {
     }
 
     playRadio(radio) {
-        if (!radio || !radio.url) return;
+        const urls = (radio && Array.isArray(radio.urls) && radio.urls.length) ? radio.urls : (radio && radio.url ? [radio.url] : []);
+        if (!urls.length) return;
+        this.queue = []; this.queueIndex = -1;
+        this.radioUrls = urls; this.radioUrlIndex = 0; this._fallbackFrom = null;
+        this.showUI();
         this.currentMode = 'RADIO';
         this.currentRadio = radio;
         
-        this.updateUI(radio.nameArabic, 'البث المباشر', radio.image || 'assets/images/radio-default.webp');
+        this.updateUI(radio.nameArabic, 'البث المباشر', radio.image || 'assets/images/icon-192.png');
         
         if (this.elements.durationEl) this.elements.durationEl.textContent = 'مباشر';
         if (this.elements.progressBar) this.elements.progressBar.style.width = '100%';
 
-        this.safePlay(radio.url).then(() => {
+        this.safePlay(this.radioUrls[0]).then(() => {
             // تحديث شاشة القفل بكل البيانات
             this.updateMediaSession(radio.nameArabic, 'إذاعة القرآن الكريم', radio.image);
         });
+    }
+
+    // ---- قوائم التشغيل (تشغيل متتابع) ----
+    playQueue(items, startIndex = 0) {
+        const list = (items || []).filter(i => i && i.surah && i.reciter);
+        if (!list.length) return;
+        this.queue = list;
+        this.queueIndex = Math.max(0, Math.min(startIndex, list.length - 1));
+        this._playQueueItem();
+    }
+
+    _playQueueItem() {
+        const it = this.queue[this.queueIndex];
+        if (it) this.playTrack(it.surah, it.reciter, 0, true);
+    }
+
+    playNext() {
+        if (this.queueIndex < this.queue.length - 1) { this.queueIndex++; this._playQueueItem(); }
+    }
+
+    playPrev() {
+        if (this.audio.currentTime > 5 || this.queueIndex <= 0) { this.audio.currentTime = 0; return; }
+        this.queueIndex--; this._playQueueItem();
+    }
+
+    // لو رابط الإذاعة وقع، نجرب الرابط اللي بعده
+    _radioFallback() {
+        if (this.currentMode !== 'RADIO' || this.radioUrlIndex >= this.radioUrls.length - 1) return false;
+        const cur = this.radioUrls[this.radioUrlIndex];
+        if (this._fallbackFrom === cur) return true;
+        this._fallbackFrom = cur;
+        this.radioUrlIndex++;
+        this.safePlay(this.radioUrls[this.radioUrlIndex]);
+        return true;
+    }
+
+    // إظهار المشغّل (بيبقى مخفي لحد ما تشغّل حاجة)
+    showUI() {
+        const p = document.getElementById('global-player');
+        if (p) { p.classList.add('active'); p.style.opacity = '1'; p.style.transform = 'translateY(0)'; }
+        document.body.classList.add('has-player');
     }
 
     togglePlay() {
@@ -257,7 +314,7 @@ class AudioPlayer {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: title,
                 artist: artist,
-                album: 'نور القرآن Premium',
+                album: 'ترتيل',
                 artwork: [
                     { src: artwork || 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=512&q=80', sizes: '512x512', type: 'image/jpeg' }
                 ]
@@ -270,6 +327,10 @@ class AudioPlayer {
             // التقديم والتأخير من شاشة القفل (15 ثانية)
             navigator.mediaSession.setActionHandler('seekforward', () => this.skipTime(15));
             navigator.mediaSession.setActionHandler('seekbackward', () => this.skipTime(-15));
+            try {
+                navigator.mediaSession.setActionHandler('nexttrack', this.queue.length ? () => this.playNext() : null);
+                navigator.mediaSession.setActionHandler('previoustrack', this.queue.length ? () => this.playPrev() : null);
+            } catch (e) {}
         }
     }
 }
