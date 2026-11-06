@@ -1,0 +1,174 @@
+[
+    {
+        "id": 1,
+        "nameArabic": "محمود خليل الحصري",
+        "nameEnglish": "Mahmoud Khalil Al-Husary",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/ar/3/30/Al-Hussary.jpg",
+        "serverUrl": "https://server13.mp3quran.net/husr",
+        "isEgyptianLibrary": true
+    },
+    {
+        "id": 2,
+        "nameArabic": "عبد الباسط عبد الصمد",
+        "nameEnglish": "AbdulBaset AbdulSamad",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/0/05/Abd_al-Basit_Abd_al-Samad_1.jpg",
+        "serverUrl": "https://server7.mp3quran.net/basit",
+        "isEgyptianLibrary": true
+    },
+    {
+        "id": 3,
+        "nameArabic": "محمد صديق المنشاوي",
+        "nameEnglish": "Mohamed Siddiq Al-Minshawi",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/ar/0/07/Mohamed_Siddiq_El-Minshawi.jpg",
+        "serverUrl": "https://server10.mp3quran.net/minsh",
+        "isEgyptianLibrary": true
+    },
+
+    {
+        "id": 5,
+        "nameArabic": "مصطفى إسماعيل",
+        "nameEnglish": "Mustafa Ismail",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/ar/4/47/Mostafa_Ismail.jpg",
+        "serverUrl": "https://server8.mp3quran.net/mustafa",
+        "isEgyptianLibrary": true
+    },
+    {
+        "id": 6,
+        "nameArabic": "مشاري راشد العفاسي",
+        "nameEnglish": "Mishary Rashid Alafasy",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/4/45/Mishari_Rashid_Al-Afasi_2011.jpg",
+        "serverUrl": "https://server8.mp3quran.net/afs",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 7,
+        "nameArabic": "ماهر المعيقلي",
+        "nameEnglish": "Maher Al-Muaiqly",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Maher_Al-Mu%27aiqly.jpg",
+        "serverUrl": "https://server12.mp3quran.net/maher",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 8,
+        "nameArabic": "ياسر الدوسري",
+        "nameEnglish": "Yasser Al-Dosari",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Yasser_Al-Dosari.jpg/400px-Yasser_Al-Dosari.jpg",
+        "serverUrl": "https://server11.mp3quran.net/yasser",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 9,
+        "nameArabic": "خالد الجليل",
+        "nameEnglish": "Khalid Al-Jalil",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/khalid-al-jalil.jpg",
+        "serverUrl": "https://server10.mp3quran.net/jleel",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 10,
+        "nameArabic": "هزاع البلوشي",
+        "nameEnglish": "Hazza Al-Balushi",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/hazza-al-balushi.jpg",
+        "serverUrl": "https://server11.mp3quran.net/hazza",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 11,
+        "nameArabic": "أحمد بن علي العجمي",
+        "nameEnglish": "Ahmed Al-Ajmi",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/ahmad-al-ajmy.jpg",
+        "serverUrl": "https://server10.mp3quran.net/ajm",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 12,
+        "nameArabic": "سعد الغامدي",
+        "nameEnglish": "Saad Al-Ghamdi",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/saad-al-ghamidi.jpg",
+        "serverUrl": "https://server7.mp3quran.net/s_gmd",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 13,
+        "nameArabic": "عبد الرحمن السديس",
+        "nameEnglish": "Abdulrahman Al-Sudais",
+        "style": "إمام الحرم (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Abdul_Rahman_Al-Sudais_2.jpg/400px-Abdul_Rahman_Al-Sudais_2.jpg",
+        "serverUrl": "https://server11.mp3quran.net/sds",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 14,
+        "nameArabic": "سعود الشريم",
+        "nameEnglish": "Saud Al-Shuraim",
+        "style": "إمام الحرم (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Saud_Al-Shuraim_1.jpg/400px-Saud_Al-Shuraim_1.jpg",
+        "serverUrl": "https://server7.mp3quran.net/shur",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 15,
+        "nameArabic": "إدريس أبكر",
+        "nameEnglish": "Idrees Abkar",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/idrees-abkar.jpg",
+        "serverUrl": "https://server6.mp3quran.net/abkr",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 16,
+        "nameArabic": "وديع اليمني",
+        "nameEnglish": "Wadih Al-Yamani",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/wadee-al-yamani.jpg",
+        "serverUrl": "https://server6.mp3quran.net/wdee3",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 17,
+        "nameArabic": "فارس عباد",
+        "nameEnglish": "Fares Abbad",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/fares-abbad.jpg",
+        "serverUrl": "https://server8.mp3quran.net/frs_a",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 18,
+        "nameArabic": "أبو بكر الشاطري",
+        "nameEnglish": "Abu Bakr Al-Shatri",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/abu-bakr-al-shatri.jpg",
+        "serverUrl": "https://server11.mp3quran.net/shatri",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 19,
+        "nameArabic": "عبد الله الجهني",
+        "nameEnglish": "Abdullah Al-Juhany",
+        "style": "إمام الحرم (رواية حفص عن عاصم)",
+        "displayPhoto": "https://tvquran.com/uploads/authors/images/abdullah-al-juhany.jpg",
+        "serverUrl": "https://server13.mp3quran.net/jhn",
+        "isEgyptianLibrary": false
+    },
+    {
+        "id": 20,
+        "nameArabic": "محمد أيوب",
+        "nameEnglish": "Muhammad Ayyub",
+        "style": "المرتل (رواية حفص عن عاصم)",
+        "displayPhoto": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Mohammad_Ayyub.jpg/400px-Mohammad_Ayyub.jpg",
+        "serverUrl": "https://server8.mp3quran.net/ayyub",
+        "isEgyptianLibrary": false
+    }
+]

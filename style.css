@@ -1,0 +1,378 @@
+/* css/style.css - Premium Core Styles & Variables (100% COMPLETE) */
+/* css/theme.css - Premium Islamic Design System */
+
+:root {
+    /* =========================================
+       الوضع الليلي (Dark Mode - Default)
+       ========================================= */
+    --bg-primary: #071A13;      /* أخضر ليلي عميق جدًا */
+    --bg-secondary: #0A241A;    /* درجة أفتح للخلفيات الثانوية */
+    --surface: rgba(16, 42, 31, 0.7); /* زجاجي أنيق للبطاقات */
+    
+    --text-primary: #FFFFFF;
+    --text-secondary: #A0B2AA;
+    
+    --accent-color: #D4AF37;    /* ذهبي هادئ */
+    --accent-hover: #F3C94D;
+    
+    --border-color: rgba(212, 175, 55, 0.15);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.4);
+    
+    --player-bg: rgba(7, 26, 19, 0.95);
+}
+
+/* =========================================
+   الوضع النهاري الفاخر (Premium Light Mode)
+   ========================================= */
+[data-theme="light"] {
+    --bg-primary: #F9F7F3;      /* عاجي دافئ (Warm Ivory) يريح العين في القراءة */
+    --bg-secondary: #F0EBE1;    /* رملي ناعم جدًا */
+    --surface: #FFFFFF;         /* أبيض نقي للبطاقات لعمل تباين */
+    
+    --text-primary: #1A2F24;    /* أخضر غامق جداً بدلاً من الأسود لقراءة مريحة */
+    --text-secondary: #5C7065;
+    
+    --accent-color: #A67C00;    /* ذهبي معتق مناسب للوضع النهاري */
+    --accent-hover: #8B6800;
+    
+    --border-color: rgba(26, 47, 36, 0.08);
+    --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.05);
+    
+    --player-bg: rgba(255, 255, 255, 0.95);
+}
+
+/* Transitions للتنقل الناعم بين الأوضاع */
+body, .card, .glass-nav, .player-bottom, h1, h2, h3, p, span {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* تطبيق المتغيرات على العناصر الأساسية */
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Cairo', sans-serif; /* الخطوط العربية الأساسية */
+}
+
+.card, .glass-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-soft);
+    border-radius: 16px; /* زوايا ناعمة Premium */
+}
+
+.text-muted-custom {
+    color: var(--text-secondary) !important;
+}
+
+.btn-primary-custom {
+    background-color: var(--accent-color);
+    color: #FFF !important;
+    border: none;
+}
+.btn-primary-custom:hover {
+    background-color: var(--accent-hover);
+}
+
+/* تنسيق المشغل السفلي */
+.player-bottom {
+    background-color: var(--player-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-top: 1px solid var(--border-color);
+}
+:root {
+    /* الوضع المظلم (الافتراضي - Premium Dark) */
+    --primary-color: #0F6B4A;
+    --primary-dark: #0A4A33;
+    --secondary-color: #C8A75A;
+    --secondary-hover: #DBC082;
+    --bg-color: #071A13;
+    --surface-color: #10261F;
+    --card-color: #163126;
+    
+    /* ألوان النصوص */
+    --text-primary: #FFFFFF;
+    --text-muted: #D4D4D4;
+    --text-dark: #121212;
+
+    /* التأثيرات الزجاجية (Glassmorphism) */
+    --glass-bg: rgba(16, 38, 31, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
+    
+    /* الخطوط */
+    --font-arabic: 'Cairo', sans-serif;
+    --font-english: 'Inter', sans-serif;
+}
+
+/* الوضع النهاري (Light Mode Overrides) */
+[data-theme="light"] {
+    --bg-color: #F8F9FA;
+    --surface-color: #FFFFFF;
+    --card-color: #F1F3F5;
+    --text-primary: #121212;
+    --text-muted: #6C757D;
+    
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* تعديلات عامة للوضع النهاري */
+[data-theme="light"] .text-white {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .search-box input,
+[data-theme="light"] .modal-content {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="light"] .btn-glass {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .btn-glass:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .dropdown-menu-dark {
+    background-color: var(--surface-color) !important;
+}
+
+[data-theme="light"] .dropdown-menu-dark .dropdown-item {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .dropdown-menu-dark .dropdown-item:hover {
+    background-color: var(--card-color);
+}
+
+/* ================================================================= */
+/* Base Styles */
+/* ================================================================= */
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: var(--font-arabic);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Typography Classes */
+.font-cairo { font-family: var(--font-arabic); }
+.font-inter { font-family: var(--font-english); }
+.text-secondary { color: var(--secondary-color) !important; }
+.text-muted-custom { color: var(--text-muted) !important; }
+
+/* Scrollbar (Premium Look) */
+.premium-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+.premium-scrollbar::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+.premium-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--card-color);
+    border-radius: 10px;
+}
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* ================================================================= */
+/* Background Effects */
+/* ================================================================= */
+
+.glass-bg-effect {
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, rgba(15, 107, 74, 0.05) 0%, rgba(7, 26, 19, 0) 50%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+[data-theme="light"] .glass-bg-effect {
+    background: radial-gradient(circle at 50% 50%, rgba(15, 107, 74, 0.03) 0%, rgba(248, 249, 250, 0) 50%);
+}
+
+/* ================================================================= */
+/* Layout & Components */
+/* ================================================================= */
+
+.glass-nav {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid var(--glass-border);
+    transition: all 0.4s ease;
+}
+
+.glass-player {
+    background: var(--glass-bg);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-top: 1px solid var(--glass-border);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    padding: 10px 0;
+    transition: all 0.4s ease;
+}
+
+/* Buttons */
+.btn-primary-custom {
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    border: none;
+    transition: all 0.3s ease;
+}
+.btn-primary-custom:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+    color: #FFFFFF;
+}
+
+.btn-outline-custom {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+.btn-outline-custom:hover {
+    background-color: var(--surface-color);
+    border-color: var(--secondary-color);
+    color: var(--text-primary);
+}
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+.btn-glass:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--secondary-color) !important;
+    transform: scale(1.05);
+}
+
+.btn-play-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--text-primary);
+    color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.btn-play-circle:hover {
+    transform: scale(1.1);
+}
+[data-theme="light"] .btn-play-circle {
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+}
+
+/* Utilities */
+.shadow-soft {
+    box-shadow: var(--shadow-soft) !important;
+}
+
+.hover-white:hover {
+    color: #FFFFFF !important;
+}
+[data-theme="light"] .hover-white:hover {
+    color: var(--primary-color) !important;
+}
+
+a {
+    transition: color 0.3s ease;
+}/* =========================================
+   القوة الجبرية لتطبيق الألوان الجديدة (Redesign Override)
+   ========================================= */
+:root {
+    --bg-primary: #04100C;          
+    --surface: rgba(12, 38, 28, 0.75); 
+    --text-primary: #F3F4F1;        
+    --accent-gold: #D4AF37;         
+}
+
+[data-theme="light"] {
+    --bg-primary: #F8F6F0 !important;          
+    --surface: #FFFFFF !important;             
+    --text-primary: #12261E !important;        
+    --accent-gold: #9A7B1C !important;         
+}
+
+/* إجبار الخلفيات والنصوص */
+body, .bg-dark, .bg-black, main, section, footer {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* إجبار البطاقات وشريط القوائم والمشغل */
+.card, .glass-panel, .glass-nav, .player-bottom, .navbar {
+    background-color: var(--surface) !important;
+}
+
+/* إجبار النصوص بالكامل */
+h1, h2, h3, h4, p, span, a, .nav-link, .card-title {
+    color: var(--text-primary) !important;
+}
+
+/* إجبار الأزرار */
+.btn-primary, .btn-success, .btn-play-circle {
+    background-color: var(--accent-gold) !important;
+    border-color: var(--accent-gold) !important;
+    color: #fff !important;
+}
+
+/* ===== المشغّل مخفي لحد ما تشغّل حاجة ===== */
+.glass-player { transform: translateY(110%); opacity: 0; pointer-events: none; }
+.glass-player.active { transform: translateY(0); opacity: 1; pointer-events: auto; }
+body.has-player { padding-bottom: 110px; }
+
+/* ===== صورة الموقع الإسلامية (غيّر الملفين دول بصورتك لو حبيت) ===== */
+.hero-bg {
+    background: url('../assets/images/hero-desktop.jpg') center / cover no-repeat, #04110c;
+}
+@media (max-width: 768px), (orientation: portrait) {
+    .hero-bg { background: url('../assets/images/hero-mobile.jpg') center / cover no-repeat, #04110c; }
+}
+
+
+/* ===== الصفحة الرئيسية ===== */
+.home-verse { font-family: 'Amiri', serif; font-size: 1.6rem; color: var(--accent-gold); text-shadow: 0 2px 12px rgba(212,175,55,0.35); }
+.home-title { font-family: 'Amiri', serif; font-size: clamp(3rem, 12vw, 5rem); color: #fff; letter-spacing: 2px;
+    text-shadow: 0 4px 24px rgba(0,0,0,0.6); background: linear-gradient(180deg,#fff 40%, var(--accent-gold)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.home-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 50px; font-size: .9rem; color: #fff;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(212,175,55,0.3); backdrop-filter: blur(8px); }
+.home-chip i { color: var(--accent-gold); }
+.quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: -10px; }
+@media (min-width: 768px) { .quick-grid { grid-template-columns: repeat(6, 1fr); } }
+.quick-tile { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 8px; border-radius: 20px; color: #fff;
+    background: linear-gradient(145deg, rgba(12,38,28,0.9), rgba(7,26,19,0.9)); border: 1px solid rgba(212,175,55,0.18);
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.quick-tile i { font-size: 1.7rem; color: var(--accent-gold); }
+.quick-tile span { font-size: .85rem; font-weight: 700; }
+.quick-tile:hover { transform: translateY(-5px); border-color: var(--accent-gold); box-shadow: 0 10px 25px rgba(212,175,55,0.15); color: #fff; }

@@ -1,0 +1,113 @@
+/* css/player.css - Premium Spotify-Inspired Player Elements */
+
+/* شريط التقدم التفاعلي (Progress Bar) */
+.player-progress {
+    height: 5px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: height 0.2s ease;
+}
+
+.player-progress:hover {
+    height: 8px;
+}
+
+.player-progress .progress-bar {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    border-radius: 10px;
+    position: relative;
+}
+
+/* دائرة التحكم المخفية تظهر عند الـ Hover */
+.player-progress .progress-bar::after {
+    content: '';
+    position: absolute;
+    right: 0; /* لأننا RTL */
+    top: 50%;
+    transform: translateY(-50%) scale(0);
+    width: 12px;
+    height: 12px;
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    transition: transform 0.2s ease;
+}
+
+.player-progress:hover .progress-bar::after {
+    transform: translateY(-50%) scale(1);
+}
+
+/* أيقونات المشغل وحالات الـ Hover */
+.control-buttons .btn {
+    transition: all 0.2s ease;
+    border: none !important;
+}
+
+.control-buttons .btn:not(.btn-play-circle):hover {
+    color: var(--secondary-color) !important;
+    transform: scale(1.1);
+}
+
+/* شريط الصوت المخصص (Volume Slider) */
+.custom-range {
+    -webkit-appearance: none;
+    width: 80px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    outline: none;
+}
+
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.custom-range::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+}
+
+/* تخصيص الغلاف المربع للمشغل (Cover Art) */
+.global-player .cover-art {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--bg-color);
+}
+
+.global-player .cover-art img {
+    transition: transform 0.3s ease;
+}
+
+.global-player .cover-art:hover img {
+    transform: scale(1.1);
+}
+
+/* إخفاء بعض الأزرار في شاشات الموبايل لتوفير المساحة */
+@media (max-width: 768px) {
+    .player-actions {
+        display: none !important;
+    }
+    
+    .control-buttons .fa-shuffle, 
+    .control-buttons .fa-repeat {
+        display: none;
+    }
+    
+    .global-player .player-container {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+}
